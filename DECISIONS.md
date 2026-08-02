@@ -100,3 +100,16 @@ Every non-obvious engineering decision, with one line of reasoning. Newest phase
 | 5.9 | Anomaly reason tags are rule-derived in **both** modes | An IsolationForest gives a score but no explanation, and the Fraud Center shows those tags as the evidence a reviewer acts on. That explanation must not change with the mode. |
 | 5.10 | The burnout model card states plainly that it is a calibrated expert rule | It is trained on synthetic data generated from the documented weighting. Presenting that as a finding discovered from real workforce data would be a lie. |
 | 5.11 | The chat assistant generates no text at all | It classifies intent and fills a template from figures the API supplies, so it cannot hallucinate a task count. Unrecognised questions return the capability list rather than a plausible guess. |
+
+## Phase 6 — Fraud Center, Audit Explorer, docs
+
+| # | Decision | Reasoning |
+|---|---|---|
+| 6.1 | User and department primary keys are deterministic (`usr_rajesh_iyer`) | `demo:reset` re-seeds mid-demonstration. With `cuid()` ids every user is recreated with a new id, the signed-in JWT's subject stops resolving, and the presenter is thrown back to the login screen at step 7 of the script. Verified: a reset is now invisible to an open session. |
+| 6.2 | The linked-block strip centres on the break instead of showing the newest 12 | The tamper script hits a mid-chain block (#386 of 962). Showing the tail of the chain hid the one thing the visual exists to demonstrate. It now fetches a window around the break and auto-scrolls to it. |
+| 6.3 | Added `fromIndex`/`toIndex`/`order` to `GET /audit/events` | Needed to fetch a window around a specific block. Filtering server-side beats pulling hundreds of blocks to discard most of them. |
+| 6.4 | "Show block #k in the ledger" jumps the table to the break | The ledger's first page shows the newest 25 blocks, so the tampered row was 22 pages away and effectively unreachable during a live demo. |
+| 6.5 | Verification is padded to ~650ms in the UI | 962 blocks verify in 15ms, which on stage looks like the button did nothing. A brief spinner makes the work legible; the real duration is printed next to it, so nothing is misrepresented. |
+| 6.6 | The Fraud Center explains *why* precision is 92% and not 100% | A round number invites suspicion. Stating that one alert is a labelled false positive, and that runtime alerts are excluded from the denominator, turns the statistic into evidence of rigour. |
+| 6.7 | The tampered state renders a "What just happened" panel | The demo's whole point is that the edited row looks normal in the database. Saying so on screen means the audience does not have to take the presenter's word for it. |
+| 6.8 | README leads with the measured numbers, including where a model *lost* | Reporting that DistilBERT scored 65% and that the lexicon beat it is more credible than quoting SST-2's published 91.3%, which is about movie reviews. |
