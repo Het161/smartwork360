@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
-import { corsOrigins } from './config/env';
+import { isAllowedOrigin } from './config/env';
 import { countDocumentedRoutes, swaggerSpec } from './config/swagger';
 import { buildApiRouter } from './routes';
 import { errorHandler, notFoundHandler } from './middleware/errors';
@@ -19,7 +19,13 @@ export function createApp(): Application {
       crossOriginEmbedderPolicy: false,
     }),
   );
-  app.use(cors({ origin: corsOrigins, credentials: true }));
+  app.use(
+    cors({
+      origin: (origin, cb) =>
+        isAllowedOrigin(origin) ? cb(null, true) : cb(new Error('Origin not allowed')),
+      credentials: true,
+    }),
+  );
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
 

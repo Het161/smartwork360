@@ -92,6 +92,12 @@ export async function scanSla(): Promise<{ breached: number; nearing: number }> 
 let task: cron.ScheduledTask | null = null;
 
 export function startSlaCron() {
+  // On Vercel there is no long-lived process to hold an interval. Vercel Cron
+  // calls POST /api/v1/jobs/sla-scan instead — same function, different trigger.
+  if (process.env.VERCEL) {
+    logger.info('Serverless runtime detected — SLA scanning runs via Vercel Cron');
+    return;
+  }
   if (!env.ENABLE_SLA_CRON) {
     logger.info('SLA cron disabled (ENABLE_SLA_CRON=false)');
     return;

@@ -38,6 +38,8 @@ const envSchema = z.object({
 
   /* ------------------------------------------------------------- onboarding */
   ALLOWED_EMAIL_DOMAINS: z.string().default('gov.in,nic.in'),
+  /** Set by Vercel Cron; when present the /jobs endpoints require it. */
+  CRON_SECRET: z.string().optional(),
   APP_BASE_URL: z.string().default('http://localhost:3000'),
   SIGNUP_RATE_LIMIT_PER_HOUR: z.coerce.number().int().default(5),
 });
@@ -58,6 +60,23 @@ export const env = parsed.data;
 export const corsOrigins = env.CORS_ORIGIN.split(',')
   .map((o) => o.trim())
   .filter(Boolean);
+
+/**
+ * CORS check.
+ *
+ * Vercel gives every deployment its own preview URL, so an exact allow-list would
+ * break each time. Any `*.vercel.app` origin is accepted in addition to the
+ * configured list; a real deployment should set CORS_ORIGIN to its own domain.
+ */
+export function isAllowedOrigin(origin?: string): boolean {
+  if (!origin) return true; // same-origin, curl, server-to-server
+  if (corsOrigins.includes(origin)) return true;
+  try {
+    return new URL(origin).hostname.endsWith('.vercel.app');
+  } catch {
+    return false;
+  }
+}
 
 export const isProd = env.NODE_ENV === 'production';
 

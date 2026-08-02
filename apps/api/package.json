@@ -12,7 +12,8 @@
     "db:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
     "demo:tamper": "tsx scripts/tamper.ts",
-    "demo:reset": "tsx prisma/seed.ts --reset"
+    "demo:reset": "tsx prisma/seed.ts --reset",
+    "vercel-build": "prisma generate && prisma db push --accept-data-loss --skip-generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
