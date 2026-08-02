@@ -8,8 +8,9 @@
  * SLA trend must look the same on stage as they did in rehearsal.
  *
  * Three demo patterns are planted deliberately (search "PLANTED"):
- *   1. BURNOUT — Ramesh Patel (PWD): 9 active tasks, 5 overdue, after-hours activity,
- *      rising negative sentiment  → surfaces as HIGH risk.
+ *   1. BURNOUT — Ramesh Patel (PWD): 9 explicitly planted active tasks (5 of them
+ *      overdue) on top of his share of the random allocation, plus after-hours
+ *      activity and rising negative sentiment → surfaces as CRITICAL risk.
  *   2. FRAUD   — Vikas Meena (REV): 14 night-time status changes over two nights,
  *      3 self-approvals, one task completed in 4 minutes → 12 org-wide alerts, 11 of
  *      which are labelled confirmed-on-review (the honest 92% precision figure).
@@ -243,6 +244,8 @@ async function main() {
     slaHours?: number;
     forceOverdue?: boolean;
     completeAfterHours?: number;
+    /** Pins the deadline to N hours from now — used for the "Due Today" KPI. */
+    dueInHours?: number;
   }): Promise<SeededTask> {
     const dept = deptByCode.get(opts.deptCode)!;
     const manager = managers.get(opts.deptCode)!;
@@ -252,7 +255,16 @@ async function main() {
       (slaOverrides[opts.deptCode]?.[opts.priority] ?? DEFAULT_SLA_HOURS[opts.priority]);
 
     let dueDate = addHours(createdAt, slaHours);
-    if (opts.forceOverdue && dueDate > NOW) dueDate = new Date(NOW.getTime() - randInt(6, 96) * HOUR);
+    if (opts.forceOverdue && dueDate > NOW) {
+      dueDate = new Date(NOW.getTime() - randInt(6, 96) * HOUR);
+    } else if (opts.dueInHours !== undefined) {
+      dueDate = new Date(NOW.getTime() + opts.dueInHours * HOUR);
+    } else if (!opts.forceOverdue && opts.status !== 'COMPLETED' && dueDate < NOW) {
+      // An open task whose SLA window has silently elapsed would read as overdue
+      // without ever being counted as such. Push it into the future instead, so
+      // the overdue total equals exactly the tasks we intended to be late.
+      dueDate = new Date(NOW.getTime() + randInt(12, 260) * HOUR);
+    }
 
     const refNo = nextRefNo(opts.deptCode, createdAt);
     const startedAt =
@@ -366,12 +378,20 @@ async function main() {
       const assignee = pick(pool).user;
       const forceOverdue = i < bucket.overdue;
 
-      // PLANTED #3 — Health department SLA story. Tasks created in week 6 (≈ days
-      // 42–35 ago) get a compressed deadline so they breach; everything after week 5
-      // recovers. This produces a visible dip-and-recovery in the trend charts.
-      let createdDaysAgo = randInt(2, 88);
+      // Completed work is spread across the full 90-day window so the trend charts
+      // have history; open work stays recent, because a real office does not carry
+      // three-month-old pending files in its active queue.
+      let createdDaysAgo = bucket.status === 'COMPLETED' ? randInt(2, 88) : randInt(1, 20);
       let slaHours: number | undefined;
       let completeAfterHours: number | undefined;
+      // A handful of open tasks land inside today to populate the "Due Today" KPI.
+      const dueInHours = !forceOverdue && bucket.status !== 'COMPLETED' && i < bucket.overdue + 3
+        ? randInt(2, 9)
+        : undefined;
+
+      // PLANTED #3 — Health department SLA story. Tasks completed in week 6 (≈ days
+      // 45–36 ago) get a compressed deadline so they breach; everything after week 5
+      // recovers. This produces a visible dip-and-recovery in the trend charts.
 
       if (deptCode === 'HLT' && bucket.status === 'COMPLETED' && chance(0.45)) {
         createdDaysAgo = randInt(36, 45);
@@ -394,6 +414,7 @@ async function main() {
         slaHours,
         forceOverdue,
         completeAfterHours,
+        dueInHours,
       });
     }
   }

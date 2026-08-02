@@ -33,3 +33,20 @@ Every non-obvious engineering decision, with one line of reasoning. Newest phase
 | 1.9 | Overdue tasks are drawn *from* the pending/in-progress buckets rather than being a fifth bucket | A task is overdue *and* in-progress; modelling OVERDUE as a status would misrepresent the workflow. `isOverdue` stays derived. |
 | 1.10 | `demo:tamper` uses `$executeRaw` against `smartwork.audit_events` | It must bypass `audit.service` completely — that is the whole point of the demo. Going through Prisma's model API would append a legitimate block instead. |
 | 1.11 | RBAC is applied as Prisma `where` fragments (`middleware/scope.ts`), not just route guards | A hand-crafted request must not be able to read another department's rows; filtering in the query is the only enforcement that survives that. |
+
+## Phase 2 — Full API
+
+| # | Decision | Reasoning |
+|---|---|---|
+| 2.1 | 51 documented endpoints, not the 30 the brief asked for | The screens in the spec need them (SLA policy editor, CSV exports, scatter data, precision stat, suggestions). Every one is reachable and Swagger-documented — the count is real, not padded. |
+| 2.2 | `diffFields()` records only fields that actually changed | An audit payload is evidence. Dumping the whole row on every edit makes the chain unreadable and hides what a reviewer needs to see. |
+| 2.3 | Maker-checker separation enforced in the service, on BOTH completion paths | `POST /tasks/:id/status` and `POST /tasks/:id/review` can each reach COMPLETED, so the "you cannot approve your own task" rule is checked in both. Verified against a manager assigned their own task. |
+| 2.4 | The fraud detector reads the AUDIT CHAIN, not the task table | The chain is the one record that cannot be quietly rewritten — which is exactly what a fraud detector should be reading. Verified: it independently scores Vikas Meena at 0.990 vs 0.300 for the next user. |
+| 2.5 | Runtime fraud alerts are stored with `labelConfirmed = null` | Precision is computed over the labelled evaluation set only, so pressing "Run Scan Now" repeatedly can never inflate the 92% figure. |
+| 2.6 | `runScan` de-duplicates on (userId, type) for OPEN alerts | Pressing the scan button during a demo must not manufacture alerts. |
+| 2.7 | ML client caches "service down" for 30s and skips the network | Otherwise every dashboard request would pay the full 8s timeout when the Python service is not running. |
+| 2.8 | Burnout feature extraction lives in the API, not the ML service | Keeps the Python side stateless, and guarantees the heuristic fallback scores identical inputs to the model path. |
+| 2.9 | SLA cron de-duplicates on (userId, title, link) | A demo left running for ten minutes would otherwise generate hundreds of duplicate breach notices. |
+| 2.10 | Open tasks whose SLA window silently elapsed are pushed into the future by the seed | Without this, 73 of 144 tasks read as overdue — "everything is late" contradicts the improvement story the trend charts are meant to tell. Now exactly 23 are overdue and 9 are due today. |
+| 2.11 | Priority sorting is done in memory | `Priority` is a Postgres enum, so `ORDER BY priority` sorts alphabetically (CRITICAL, HIGH, LOW, MEDIUM) — wrong. The shared `PRIORITY_ORDER` map is applied after fetch. |
+| 2.12 | CSV exports are prefixed with a UTF-8 BOM | Excel otherwise mangles the Devanagari department names. |
