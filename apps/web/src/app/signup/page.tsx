@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -15,10 +15,12 @@ import {
   Building2,
   Check,
   Mail,
+  RefreshCw,
   ShieldCheck,
+  WifiOff,
   X,
 } from 'lucide-react';
-import { ApiError, api } from '@/lib/api';
+import { API_URL, ApiError, api } from '@/lib/api';
 import { useI18n } from '@/i18n/provider';
 import { listContainer, listItem, pop, spring, stepVariants, useReducedMotion } from '@/lib/motion';
 import { Button } from '@/components/ui/button';
@@ -86,16 +88,31 @@ function Signup() {
 
   const [departments, setDepartments] = useState<DepartmentDTO[]>([]);
   const [allowedDomains, setAllowedDomains] = useState<string[]>(['gov.in', 'nic.in']);
+  const [deptState, setDeptState] = useState<'loading' | 'ready' | 'error'>('loading');
 
-  useEffect(() => {
+  /**
+   * Loads the department list.
+   *
+   * Tracked as an explicit loading/ready/error state rather than "did the array
+   * fill up". An unreachable API used to leave step 2 rendering an empty grid with
+   * no cards and no explanation, which reads as "the Continue button is broken"
+   * rather than "the server is down".
+   */
+  const loadDepartments = useCallback(() => {
+    setDeptState('loading');
     api
       .signupDepartments()
       .then((res) => {
         setDepartments(res.items);
         if (res.allowedDomains?.length) setAllowedDomains(res.allowedDomains);
+        setDeptState(res.items.length > 0 ? 'ready' : 'error');
       })
-      .catch(() => setFormError('Could not load departments. Is the API running?'));
+      .catch(() => setDeptState('error'));
   }, []);
+
+  useEffect(() => {
+    loadDepartments();
+  }, [loadDepartments]);
 
   const emailValid = useMemo(() => {
     if (!email.includes('@')) return false;
@@ -354,6 +371,23 @@ function Signup() {
                     </Field>
                   </div>
 
+                  {deptState === 'error' ? (
+                    <p
+                      role="alert"
+                      className="mt-5 flex items-start gap-2 rounded-btn border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger"
+                    >
+                      <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                      <span>
+                        Cannot reach the server at <code className="font-mono text-xs">{API_URL}</code>.
+                        Start the API, then{' '}
+                        <button type="button" onClick={loadDepartments} className="font-semibold underline">
+                          retry
+                        </button>
+                        .
+                      </span>
+                    </p>
+                  ) : null}
+
                   <Button className="mt-6 w-full" size="lg" disabled={!step1Valid} onClick={() => go(2)}>
                     Continue
                     <ArrowRight className="h-4 w-4" aria-hidden />
@@ -371,11 +405,43 @@ function Signup() {
                     Your tasks and dashboards are scoped to this department.
                   </p>
 
+                  {deptState === 'loading' ? (
+                    <div className="mt-5 grid gap-2.5 sm:grid-cols-2" aria-live="polite">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="skeleton h-[68px] rounded-card" />
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {deptState === 'error' ? (
+                    <div
+                      role="alert"
+                      className="mt-5 rounded-card border border-danger/30 bg-danger-soft p-4 text-center"
+                    >
+                      <WifiOff className="mx-auto h-6 w-6 text-danger" aria-hidden />
+                      <p className="mt-2 text-md font-medium text-slate-900">
+                        Cannot reach the server
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        The departments list could not be loaded, so registration cannot continue.
+                        Check that the API is running at{' '}
+                        <code className="rounded bg-white px-1 py-0.5 font-mono text-xs">
+                          {API_URL}
+                        </code>
+                        .
+                      </p>
+                      <Button variant="secondary" size="sm" className="mt-3" onClick={loadDepartments}>
+                        <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+                        Try again
+                      </Button>
+                    </div>
+                  ) : null}
+
                   <motion.ul
                     variants={listContainer(reduced)}
                     initial="hidden"
                     animate="show"
-                    className="mt-5 grid gap-2.5 sm:grid-cols-2"
+                    className={cn('mt-5 grid gap-2.5 sm:grid-cols-2', deptState !== 'ready' && 'hidden')}
                     role="radiogroup"
                     aria-label="Department"
                   >
