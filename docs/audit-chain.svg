@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 420" width="1180" height="420" role="img" aria-label="How the tamper-evident audit chain works: each block is sealed with the previous block's fingerprint, so editing one breaks every block after it">
+  <defs>
+    <linearGradient id="okTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3E86D8"/><stop offset="100%" stop-color="#1E5AAE"/></linearGradient>
+    <linearGradient id="badTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E05B52"/><stop offset="100%" stop-color="#B3261E"/></linearGradient>
+    <filter id="d2" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect width="1180" height="420" fill="#F6F8FB"/>
+
+  <text x="48" y="48" font-family="Inter,system-ui,sans-serif" font-size="23" font-weight="700" fill="#0F172A">Why nobody can quietly change the records</text>
+  <text x="48" y="74" font-family="Inter,system-ui,sans-serif" font-size="14" fill="#64748B">Every action becomes a sealed block. Each seal is made from the block before it.</text>
+
+  <!-- ROW 1: healthy chain -->
+  <g transform="translate(60,120)">
+    <text x="0" y="-6" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#0E7A3D">NORMAL — every seal matches</text>
+
+    <g filter="url(#d2)">
+      <!-- block A -->
+      <g transform="translate(0,0)">
+        <path d="M0,-26 L58,0 L0,26 L-58,0 Z" fill="url(#okTop)" transform="translate(58,26)"/>
+        <path d="M0,26 L58,52 L58,74 L0,48 Z" fill="#164B94" transform="translate(0,0)"/>
+        <path d="M116,26 L58,52 L58,74 L116,48 Z" fill="#123C77"/>
+        <text x="58" y="30" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">#385</text>
+      </g>
+      <!-- block B -->
+      <g transform="translate(190,0)">
+        <path d="M0,-26 L58,0 L0,26 L-58,0 Z" fill="url(#okTop)" transform="translate(58,26)"/>
+        <path d="M0,26 L58,52 L58,74 L0,48 Z" fill="#164B94"/>
+        <path d="M116,26 L58,52 L58,74 L116,48 Z" fill="#123C77"/>
+        <text x="58" y="30" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">#386</text>
+      </g>
+      <!-- block C -->
+      <g transform="translate(380,0)">
+        <path d="M0,-26 L58,0 L0,26 L-58,0 Z" fill="url(#okTop)" transform="translate(58,26)"/>
+        <path d="M0,26 L58,52 L58,74 L0,48 Z" fill="#164B94"/>
+        <path d="M116,26 L58,52 L58,74 L116,48 Z" fill="#123C77"/>
+        <text x="58" y="30" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">#387</text>
+      </g>
+      <!-- block D -->
+      <g transform="translate(570,0)">
+        <path d="M0,-26 L58,0 L0,26 L-58,0 Z" fill="url(#okTop)" transform="translate(58,26)"/>
+        <path d="M0,26 L58,52 L58,74 L0,48 Z" fill="#164B94"/>
+        <path d="M116,26 L58,52 L58,74 L116,48 Z" fill="#123C77"/>
+        <text x="58" y="30" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">#388</text>
+      </g>
+    </g>
+
+    <!-- healthy links with a pulse running along them -->
+    <g stroke="#0E7A3D" stroke-width="2.5" fill="none">
+      <path d="M120,26 L186,26"/><path d="M310,26 L376,26"/><path d="M500,26 L566,26"/>
+    </g>
+    <g fill="#0E7A3D">
+      <circle r="4.5"><animate attributeName="cx" values="120;186" dur="1.1s" begin="0s;3.3s" repeatCount="indefinite"/><animate attributeName="cy" values="26;26" dur="1.1s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;1;0" dur="1.1s" begin="0s;3.3s" repeatCount="indefinite"/></circle>
+      <circle r="4.5"><animate attributeName="cx" values="310;376" dur="1.1s" begin="1.1s;4.4s" repeatCount="indefinite"/><animate attributeName="cy" values="26;26" dur="1.1s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;1;0" dur="1.1s" begin="1.1s;4.4s" repeatCount="indefinite"/></circle>
+      <circle r="4.5"><animate attributeName="cx" values="500;566" dur="1.1s" begin="2.2s;5.5s" repeatCount="indefinite"/><animate attributeName="cy" values="26;26" dur="1.1s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;1;0" dur="1.1s" begin="2.2s;5.5s" repeatCount="indefinite"/></circle>
+    </g>
+
+    <g transform="translate(700,10)">
+      <rect width="150" height="34" rx="17" fill="#E7F5ED" stroke="#0E7A3D" stroke-opacity="0.35"/>
+      <circle cx="22" cy="17" r="8" fill="#0E7A3D"/>
+      <path d="M18,17 l3,3 l6,-6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="40" y="22" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="600" fill="#0E7A3D">Chain intact</text>
+    </g>
+  </g>
+
+  <!-- ROW 2: tampered chain -->
+  <g transform="translate(60,270)">
+    <text x="0" y="-6" font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="600" fill="#B3261E">SOMEONE EDITS BLOCK #386 DIRECTLY IN THE DATABASE</text>
+
+    <g filter="url(#d2)">
+      <g transform="translate(0,0)">
+        <path d="M0,-26 L58,0 L0,26 L-58,0 Z" fill="url(#okTop)" transform="translate(58,26)"/>
+        <path d="M0,26 L58,52 L58,74 L0,48 Z" fill="#164B94"/>
+        <path d="M116,26 L58,52 L58,74 L116,48 Z" fill="#123C77"/>
+        <text x="58" y="30" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">#385</text>
+      </g>
+      <!-- tampered block -->
+      <g transform="translate(190,0)">
+        <path d="M0,-26 L58,0 L0,26 L-58,0 Z" fill="url(#badTop)" transform="translate(58,26)"/>
+        <path d="M0,26 L58,52 L58,74 L0,48 Z" fill="#8F1E18"/>
+        <path d="M116,26 L58,52 L58,74 L116,48 Z" fill="#6E1712"/>
+        <text x="58" y="30" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">#386</text>
+        <animate attributeName="opacity" values="1;0.55;1" dur="1.6s" repeatCount="indefinite"/>
+      </g>
+      <!-- broken-after blocks -->
+      <g transform="translate(380,0)" opacity="0.45">
+        <path d="M0,-26 L58,0 L0,26 L-58,0 Z" fill="url(#okTop)" transform="translate(58,26)"/>
+        <path d="M0,26 L58,52 L58,74 L0,48 Z" fill="#164B94"/>
+        <path d="M116,26 L58,52 L58,74 L116,48 Z" fill="#123C77"/>
+        <text x="58" y="30" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">#387</text>
+      </g>
+      <g transform="translate(570,0)" opacity="0.45">
+        <path d="M0,-26 L58,0 L0,26 L-58,0 Z" fill="url(#okTop)" transform="translate(58,26)"/>
+        <path d="M0,26 L58,52 L58,74 L0,48 Z" fill="#164B94"/>
+        <path d="M116,26 L58,52 L58,74 L116,48 Z" fill="#123C77"/>
+        <text x="58" y="30" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">#388</text>
+      </g>
+    </g>
+
+    <!-- snapped link -->
+    <g stroke="#0E7A3D" stroke-width="2.5" fill="none"><path d="M120,26 L186,26"/></g>
+    <g stroke="#B3261E" stroke-width="2.5" fill="none">
+      <path d="M310,26 L332,26"/><path d="M354,26 L376,26"/>
+      <path d="M336,16 L350,36 M350,16 L336,36" stroke-linecap="round"/>
+    </g>
+    <g stroke="#CBD5E1" stroke-width="2.5" fill="none"><path d="M500,26 L566,26"/></g>
+
+    <g transform="translate(700,10)">
+      <rect width="290" height="34" rx="17" fill="#FDECEA" stroke="#B3261E" stroke-opacity="0.35"/>
+      <circle cx="22" cy="17" r="8" fill="#B3261E"/>
+      <path d="M22,12 l0,6 M22,22 l0,0.5" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      <text x="40" y="22" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="600" fill="#B3261E">Tamper detected at block #386</text>
+    </g>
+    <text x="700" y="66" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#64748B">Every block after it is affected too — so the edit cannot be hidden.</text>
+  </g>
+</svg>

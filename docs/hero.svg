@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" role="img" aria-label="SMARTWORK 360 — Smart Task and Performance Management for Government Offices">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E2A52"/>
+      <stop offset="55%" stop-color="#14417B"/>
+      <stop offset="100%" stop-color="#0F3363"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="34"/>
+    </filter>
+    <clipPath id="frame"><rect width="1200" height="320" rx="14"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="1200" height="320" fill="url(#bg)"/>
+
+    <!-- Ambient orbs, drifting slowly -->
+    <g filter="url(#soft)" opacity="0.75">
+      <circle cx="150" cy="70" r="130" fill="#0E7490" opacity="0.30">
+        <animate attributeName="cx" values="150;250;150" dur="24s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="70;140;70" dur="19s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="980" cy="250" r="150" fill="#FF9933" opacity="0.20">
+        <animate attributeName="cx" values="980;870;980" dur="28s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="250;170;250" dur="22s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="620" cy="300" r="120" fill="#138808" opacity="0.16">
+        <animate attributeName="cy" values="300;220;300" dur="26s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- Moving sheen -->
+    <rect x="-500" y="0" width="500" height="320" fill="url(#sheen)">
+      <animate attributeName="x" values="-500;1200" dur="7s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Emblem: rotating outer ring + counter-rotating ticks -->
+    <g transform="translate(112,160)">
+      <circle r="52" fill="none" stroke="#FF9933" stroke-width="3" stroke-dasharray="14 9" opacity="0.95">
+        <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="16s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="40" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="1.6"/>
+      <g stroke="#FF9933" stroke-width="3" stroke-linecap="round">
+        <animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="26s" repeatCount="indefinite"/>
+        <path d="M0,-62 L0,-54"/><path d="M0,54 L0,62"/>
+        <path d="M-62,0 L-54,0"/><path d="M54,0 L62,0"/>
+      </g>
+      <text x="0" y="9" font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif"
+            font-size="25" font-weight="700" fill="#ffffff" text-anchor="middle">SW</text>
+    </g>
+
+    <!-- Wordmark -->
+    <text x="200" y="132" font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif"
+          font-size="52" font-weight="700" fill="#ffffff" letter-spacing="1.5">SMARTWORK 360</text>
+    <text x="202" y="170" font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif"
+          font-size="17" fill="#ffffff" opacity="0.80">Task &amp; Performance Management for Government Offices</text>
+    <text x="202" y="198" font-family="Noto Sans Devanagari,Inter,sans-serif"
+          font-size="17" fill="#ffffff" opacity="0.58">स्मार्ट कार्य एवं प्रदर्शन प्रबंधन</text>
+
+    <!-- Tricolour rule that draws itself -->
+    <g transform="translate(202,220)">
+      <rect width="112" height="5" rx="2.5" fill="#FF9933"/>
+      <rect x="112" width="112" height="5" rx="2.5" fill="#ffffff"/>
+      <rect x="224" width="112" height="5" rx="2.5" fill="#138808"/>
+      <rect width="336" height="5" rx="2.5" fill="#0E2A52">
+        <animate attributeName="width" values="336;0" dur="1.4s" fill="freeze"/>
+        <animate attributeName="x" values="0;336" dur="1.4s" fill="freeze"/>
+      </rect>
+    </g>
+
+    <!-- Live chain of blocks, links pulsing left to right -->
+    <g transform="translate(200,258)">
+      <g font-family="Inter,system-ui,sans-serif" font-size="10" fill="#ffffff" opacity="0.55">
+        <text x="0" y="-4">TAMPER-EVIDENT AUDIT CHAIN</text>
+      </g>
+      <g transform="translate(0,6)">
+        <g>
+          <rect width="34" height="20" rx="4" fill="#ffffff" fill-opacity="0.14" stroke="#FF9933" stroke-opacity="0.7"/>
+          <animate attributeName="opacity" values="0.45;1;0.45" dur="3s" begin="0s" repeatCount="indefinite"/>
+        </g>
+        <path d="M34,10 L46,10" stroke="#FF9933" stroke-width="1.6" stroke-opacity="0.8"/>
+        <g transform="translate(46,0)">
+          <rect width="34" height="20" rx="4" fill="#ffffff" fill-opacity="0.14" stroke="#FF9933" stroke-opacity="0.7"/>
+          <animate attributeName="opacity" values="0.45;1;0.45" dur="3s" begin="0.3s" repeatCount="indefinite"/>
+        </g>
+        <path d="M80,10 L92,10" stroke="#FF9933" stroke-width="1.6" stroke-opacity="0.8"/>
+        <g transform="translate(92,0)">
+          <rect width="34" height="20" rx="4" fill="#ffffff" fill-opacity="0.14" stroke="#FF9933" stroke-opacity="0.7"/>
+          <animate attributeName="opacity" values="0.45;1;0.45" dur="3s" begin="0.6s" repeatCount="indefinite"/>
+        </g>
+        <path d="M126,10 L138,10" stroke="#FF9933" stroke-width="1.6" stroke-opacity="0.8"/>
+        <g transform="translate(138,0)">
+          <rect width="34" height="20" rx="4" fill="#ffffff" fill-opacity="0.14" stroke="#FF9933" stroke-opacity="0.7"/>
+          <animate attributeName="opacity" values="0.45;1;0.45" dur="3s" begin="0.9s" repeatCount="indefinite"/>
+        </g>
+        <path d="M172,10 L184,10" stroke="#FF9933" stroke-width="1.6" stroke-opacity="0.8"/>
+        <g transform="translate(184,0)">
+          <rect width="34" height="20" rx="4" fill="#ffffff" fill-opacity="0.14" stroke="#FF9933" stroke-opacity="0.7"/>
+          <animate attributeName="opacity" values="0.45;1;0.45" dur="3s" begin="1.2s" repeatCount="indefinite"/>
+        </g>
+        <text x="232" y="14" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#ffffff" opacity="0.7">962 blocks verified in 15 ms</text>
+      </g>
+    </g>
+
+    <!-- Metric chips -->
+    <g font-family="Inter,system-ui,sans-serif" transform="translate(756,92)">
+      <g>
+        <rect width="188" height="52" rx="10" fill="#ffffff" fill-opacity="0.10" stroke="#ffffff" stroke-opacity="0.18"/>
+        <text x="16" y="24" font-size="20" font-weight="700" fill="#ffffff">32.5%</text>
+        <text x="16" y="40" font-size="11" fill="#ffffff" opacity="0.7">faster task cycle time</text>
+      </g>
+      <g transform="translate(200,0)">
+        <rect width="188" height="52" rx="10" fill="#ffffff" fill-opacity="0.10" stroke="#ffffff" stroke-opacity="0.18"/>
+        <text x="16" y="24" font-size="20" font-weight="700" fill="#ffffff">87.5%</text>
+        <text x="16" y="40" font-size="11" fill="#ffffff" opacity="0.7">sentiment accuracy</text>
+      </g>
+      <g transform="translate(0,64)">
+        <rect width="188" height="52" rx="10" fill="#ffffff" fill-opacity="0.10" stroke="#ffffff" stroke-opacity="0.18"/>
+        <text x="16" y="24" font-size="20" font-weight="700" fill="#ffffff">92%</text>
+        <text x="16" y="40" font-size="11" fill="#ffffff" opacity="0.7">fraud detection precision</text>
+      </g>
+      <g transform="translate(200,64)">
+        <rect width="188" height="52" rx="10" fill="#ffffff" fill-opacity="0.10" stroke="#ffffff" stroke-opacity="0.18"/>
+        <text x="16" y="24" font-size="20" font-weight="700" fill="#ffffff">57</text>
+        <text x="16" y="40" font-size="11" fill="#ffffff" opacity="0.7">documented REST APIs</text>
+      </g>
+    </g>
+  </g>
+</svg>

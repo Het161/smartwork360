@@ -1,360 +1,216 @@
-# SMARTWORK 360
+<p align="center">
+  <img src="docs/hero.svg" alt="SMARTWORK 360 — Smart Task and Performance Management for Government Offices" width="100%">
+</p>
 
-**AI + Blockchain-backed Smart Task & Performance Management System for Government Offices**
-
-A Smart India Hackathon prototype. It replaces manual follow-ups and opaque reporting
-in government departments with role-based dashboards (Admin / Manager / Employee),
-AI-driven insight into morale, burnout and anomalous behaviour, and a tamper-evident
-SHA-256 hash-chain audit trail over every state change.
-
-> Every headline number in this README was measured on the seeded dataset and is
-> displayed live in the product. Where something is simulated — the Parichay SSO
-> screen, blockchain anchoring — it is labelled as simulated in the UI, in the API
-> response, and here.
+<p align="center">
+  <img alt="Next.js 14" src="https://img.shields.io/badge/Next.js-14-000000?style=flat-square&logo=next.js">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript">
+  <img alt="Express" src="https://img.shields.io/badge/Express-4-000000?style=flat-square&logo=express">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-Python-009688?style=flat-square&logo=fastapi">
+  <img alt="Smart India Hackathon" src="https://img.shields.io/badge/Smart%20India%20Hackathon-prototype-FF9933?style=flat-square">
+</p>
 
 ---
 
-## Quickstart
+## What problem does this solve?
+
+In a government office, work moves on paper and phone calls. A file sits on
+somebody's desk and nobody knows. A deadline passes and nobody notices until a
+citizen complains. When something goes wrong, there is no reliable way to find out
+who changed what, or when.
+
+**SMARTWORK 360 fixes three things:**
+
+| Problem today | What this does |
+|---|---|
+| Nobody knows where a file is stuck | Live dashboards for staff, managers and the collector |
+| Deadlines slip quietly | Automatic SLA countdown, warnings before a deadline is missed |
+| Records can be changed without a trace | Every change is sealed in a chain that shows if anyone edited it |
+| Nobody notices when staff are drowning | The system spots overload and low morale from the work itself |
+
+---
+
+## See it in 60 seconds
 
 ```bash
-docker compose up -d     # PostgreSQL 16 — skip if you already run postgres on :5432
-npm install              # installs all four workspaces
-npm run seed             # schema + a realistic 90-day district-office history
-npm run dev              # web :3000 · api :4000
-npm run dev:ml           # optional — FastAPI ML service on :8000
+docker compose up -d     # start the database (skip if postgres already runs)
+npm install              # install everything
+npm run seed             # fill it with a realistic district office
+npm run dev              # open http://localhost:3000
 ```
 
-Open <http://localhost:3000>. The login screen has one-click chips for each role.
-**Password for every demo account: `Demo@123`.**
+Click a role on the login screen — no password typing needed.
+**Every demo account uses the password `Demo@123`.**
 
-| Role | Account | Sees |
+| Sign in as | Email | What you see |
 |---|---|---|
-| Admin | `rajesh.iyer@gov.in` | Everything, all departments |
-| Manager | `anil.kulkarni@gov.in` | Public Works only (the burnout case lives here) |
-| Manager | `sunita.deshmukh@gov.in` | Revenue only (the fraud case lives here) |
-| Employee | `kavita.joshi@gov.in` | Only her own tasks |
-
-Other useful commands:
-
-```bash
-npm run demo:tamper   # simulate an insider editing the database directly
-npm run demo:reset    # restore the chain and re-seed
-npm run eval:ml       # sentiment accuracy on the held-out corpus
-npm run typecheck     # strict TypeScript across all workspaces
-```
-
-**`DEMO.md` is the rehearsed 7-minute judge script.** `DECISIONS.md` logs every
-non-obvious engineering decision with its reasoning.
+| 👑 **Collector (Admin)** | `rajesh.iyer@gov.in` | Every department, fraud alerts, the audit chain |
+| 👔 **Manager** | `anil.kulkarni@gov.in` | One department's team, workload and morale |
+| 👤 **Employee** | `kavita.joshi@gov.in` | Only her own tasks |
 
 ---
 
-## Architecture
+## How it fits together
 
-```mermaid
-flowchart LR
-  subgraph Client
-    W["Next.js 14 App Router<br/>web :3000<br/>EN / हिंदी · PWA"]
-  end
+<p align="center">
+  <img src="docs/architecture.svg" alt="Architecture: browser talks to the API server, which saves to PostgreSQL, seals a copy in the audit chain, and asks the Python AI service" width="100%">
+</p>
 
-  subgraph Server
-    A["Express + Prisma<br/>api :4000<br/>51 documented endpoints"]
-    AU["Audit service<br/>SHA-256 hash chain"]
-    CR["node-cron<br/>SLA scanner, 60s"]
-  end
+Four pieces, in plain terms:
 
-  subgraph Inference
-    M["FastAPI ML service<br/>ml :8000<br/>model | heuristic"]
-    F["TypeScript fallback<br/>identical algorithms"]
-  end
+1. **Browser** — what people see. Dashboards, task lists, charts. Switches between
+   English and हिंदी instantly.
+2. **API server** — the rulebook. It decides who may see what, whether a task is
+   allowed to move to the next stage, and it saves everything.
+3. **Audit chain** — a sealed copy of every change. Explained below.
+4. **AI service** — reads the notes people write and works out mood, overload and
+   suspicious behaviour.
 
-  DB[("PostgreSQL 16<br/>schema: smartwork")]
-
-  W -->|"REST + JWT"| A
-  A --> AU
-  AU -->|"same transaction"| DB
-  A --> DB
-  CR --> DB
-  A -->|"HTTP, 8s timeout"| M
-  A -.->|"on failure, instantly"| F
-  M -.->|"stateless — API extracts features"| A
-```
-
-```
-apps/web         Next.js 14 App Router — all three role dashboards
-apps/api         Express + Prisma REST API, Swagger at /docs
-services/ml      Python FastAPI — sentiment, burnout, anomaly, chat intents
-packages/shared  Shared TypeScript types, zod schemas, workflow rules
-```
-
-Ports: web `3000`, api `4000`, ml `8000`, postgres `5432`.
-
-### The three architectural commitments
-
-**1. Nothing is written without being audited.** `appendEvent()` takes the caller's
-Prisma transaction. A task change and its audit block commit together or roll back
-together — there is no code path that produces an unaudited mutation.
-
-**2. Access control lives in the query, not the UI.** `middleware/scope.ts` returns
-Prisma `where` fragments. A hand-crafted request from a manager cannot read another
-department's rows, because the filter is in the SQL.
-
-**3. The demo cannot break offline.** The ML service defaults to heuristic mode. If
-it is unreachable, the API falls back to TypeScript implementations of the same
-algorithms — verified to produce byte-identical sentiment scores across all 130
-evaluation comments. Fonts are self-hosted npm packages; no runtime CDN calls.
+> **It keeps working with no internet.** If the AI service is switched off, the API
+> does the same calculations itself. Nothing on screen breaks or goes blank.
 
 ---
 
-## The audit chain
+## The part judges ask about: can records be faked?
 
-Every mutation appends a block:
+<p align="center">
+  <img src="docs/audit-chain.svg" alt="A healthy chain of sealed blocks, and the same chain after one block is edited, showing the break" width="100%">
+</p>
 
-```
-hash = sha256(
-  prevHash | chainIndex | entityType | entityId | action | actorId |
-  canonicalJson(payload) | createdAtISO
-)
-```
+Every action — creating a task, approving it, adding a note — becomes a **block**.
+Each block carries a fingerprint made from *the block before it*.
 
-- **Genesis** block has `prevHash = "0".repeat(64)`.
-- `canonicalJson` sorts object keys before hashing — Postgres `jsonb` does not
-  preserve key order, so a payload read back would otherwise hash differently than
-  when written.
-- `createdAt` is generated in the service, not by a database default, because it is
-  part of the hash pre-image.
-- `verifyChain()` streams every block in one query and checks three things: the
-  index is dense (catches deletion), `prevHash` matches (catches reordering), and
-  the contents reproduce the stored hash (catches editing). It reports the **first**
-  failing index.
-- A **Merkle root** is cut every 100 blocks into an `anchors` table.
-  `externalTxHash` reads `pending — Polygon Amoy (planned)`. **No chain call is ever
-  made.** Anchoring is designed, not claimed.
+So if somebody opens the database and edits one old record, its fingerprint no
+longer matches, **and every block after it stops matching too**. The change cannot
+be hidden.
 
-Measured: **962 blocks verified in 15ms.**
-
-### Try to break it
+**Try to break it yourself:**
 
 ```bash
-npm run demo:tamper
+npm run demo:tamper     # secretly edits one record, straight in the database
 ```
 
-Runs a raw `UPDATE` against `smartwork.audit_events`, bypassing the audit service
-entirely — no new block, no recomputed hash. The row looks perfectly normal in
-`psql`. Then press **Verify chain** in the Admin → Blockchain Audit screen: the
-banner turns red, names the broken block, and the linked-block strip scrolls to the
-severed link with every subsequent block faded, because the break propagates.
+Now open **Blockchain Audit** in the app and press **Verify chain**. The screen turns
+red and names the exact block that was touched. The row still looks completely normal
+in the database — only recomputing the chain reveals it.
 
-`npm run demo:reset` restores it. User and department IDs are deterministic, so a
-reset does **not** sign you out mid-demonstration.
+```bash
+npm run demo:reset      # put everything back
+```
+
+Measured: **962 blocks checked in 15 milliseconds.**
+
+> **Being straight with you:** this is not a public blockchain and we never say it
+> is. It is a sealed chain of fingerprints stored in an ordinary database, plus
+> checkpoints every 100 blocks. Publishing those checkpoints to a real chain is
+> designed but *not* built, and the screen says **"planned"** where that would go.
 
 ---
 
 ## What the AI actually does
 
-### Sentiment — and why the lexicon beats the transformer here
+No chatbot pretending to be clever. Four specific jobs, each measured.
 
-| Path | Held-out accuracy (40 comments) |
+### 1. Reads the mood of the office
+It scores the notes staff write — including Hinglish like *"delay ho raha hai"* —
+and shows the team's morale as a dial.
+
+**We tested a famous AI model against our own simpler method and the simple one won:**
+
+| Method | Accuracy on unseen notes |
 |---|---|
-| **Heuristic lexicon (shipped default)** | **87.5%** |
-| DistilBERT SST-2 + neutrality gate | 85.0% |
-| DistilBERT SST-2 alone | 65.0% |
+| ✅ **Our word-based method (shipped)** | **87.5%** |
+| DistilBERT AI model, helped along | 85.0% |
+| DistilBERT AI model on its own | 65.0% |
 
-DistilBERT SST-2 reports ~91.3% on the SST-2 dev split — English **movie reviews**,
-and a **binary** task with no NEUTRAL class. Most lines in a government file are
-neither praise nor complaint. On our held-out set its NEUTRAL recall was **0.08**:
-*"Placed the muster roll before the accounts branch for scrutiny"* came back
-NEGATIVE with high confidence.
+The AI model was trained on *movie reviews* and only knows "good" or "bad". Most
+lines in a government file are neither — *"Placed the muster roll before the accounts
+branch"* is just routine, and the model called it negative. So we shipped the method
+that actually works here, and we show the numbers rather than hide them.
 
-We added a **neutrality gate** — the lexicon answers *"does this text carry any
-affect at all?"*, which is the question a binary classifier structurally cannot —
-and model mode went from 65% to 85%. The lexicon still edges it, needs no 250MB
-download, and cannot break offline, so it ships as the default.
+### 2. Spots staff who are drowning
+From workload, missed deadlines, late-night working and the tone of their own notes.
+In the demo data it flags **Ramesh Patel at 85/100 — critical**, before anybody
+complained.
 
-**Evaluation methodology.** Three corpora, each retired from the headline the moment
-it influences a change:
+### 3. Spots suspicious behaviour
+It reads the **audit chain**, not the task list — because somebody who edits a record
+cannot edit the evidence that they edited it. In the demo it catches an officer who
+approved his own work and closed a field inspection in 4 minutes.
 
-| File | Size | Role |
-|---|---|---|
-| `office_comments_dev.csv` | 50 | Weights tuned on it — 98%, meaningless as an estimate |
-| `office_comments_test.csv` | 40 | Its errors prompted a vocabulary sweep — 95%, no longer clean |
-| `office_comments_holdout.csv` | 40 | Written after tuning stopped — **87.5%, the reported figure** |
+**92% precision** — 11 of 12 flagged cases were genuine on review. Not 100%, because
+one was a real false alarm: a man working late who turned out to be overloaded, not
+dishonest. We label it as a miss instead of quietly deleting it.
 
-The first set reached 100% at one point. That was the signal to build the second and
-third: quoting accuracy on data that shaped the model is fitting to the test set.
-
-```bash
-npm run eval:ml
-```
-
-### Burnout
-
-Five features over 14 days — active load, overdue count, after-hours share, negative
-sentiment share, update frequency. The API extracts them; the service scores them.
-
-The model card says plainly what this is: there is no public corpus of
-government-office burnout labels, so the LogisticRegression is trained on synthetic
-vectors generated from an expert-specified weighting. It is a **calibrated version of
-a documented rule**, not a discovery from real workforce data.
-
-### Anomaly detection
-
-Feature vectors are built from the **audit chain**, not the task table — a user who
-edits a record cannot edit the evidence of having edited it. IsolationForest is
-fitted on the incoming batch *plus a synthetic normal-staff cohort*, so a department
-where several people misbehave cannot redefine "normal".
-
-Reason tags (`night_hour_ratio`, `self_approval`, `cycle_time_zscore`…) are
-rule-derived in **both** modes, because the Fraud Center shows them as the evidence a
-reviewer acts on — that explanation must not change with the inference mode.
-
-On the seeded data the detector independently scores the planted fraud case at
-**0.990**, against ≤0.18 for every other user.
-
-### The assistant
-
-An **intent router**, not a generator. It classifies the question — in English,
-Hindi or Hinglish — then fills a template from figures the API fetched. It cannot
-hallucinate a task count because it never produces one. An unrecognised question
-returns the capability list rather than a plausible-sounding guess.
+### 4. Answers questions about your work
+Ask *"mere pending kaam kitne hain?"* and it answers from your real tasks. It
+**cannot make up a number**, because it never writes numbers — it picks the answer
+shape and fills in figures straight from the database.
 
 ---
 
-## Onboarding: registration, email OTP, approval
+## Everything else it does
 
-A new employee registers themselves, verifies by email, and waits for an
-administrator — the flow a real department would actually use.
+- **Works in Hindi.** One click swaps the whole interface. Task text stays as
+  written — translating a citizen's file note would misrepresent the record.
+- **New staff can register themselves.** Sign up → verify by email code → an
+  administrator approves → you're in. Self-registration can only ever create a
+  normal employee account, never a manager.
+- **Nobody approves their own work.** The system blocks it, whatever your rank.
+- **Drag-and-drop task board** for managers, with illegal moves refused.
+- **Reports** you can download as spreadsheets.
+- **Works on a phone** and installs like an app.
+- **Built for accessibility** — full keyboard use, screen-reader labels, and all
+  animation switches off if your device asks for reduced motion.
 
-```
-/signup  →  OTP emailed  →  PENDING_APPROVAL  →  admin approves  →  welcome email  →  login works
-```
+---
 
-**Security posture**
+## Honest scorecard
 
-- Self-registration can only ever create an **EMPLOYEE**. The role is set by the
-  server and is not read from the request body — verified by a test that posts
-  `role: "ADMIN"` and gets an employee back.
-- Restricted to configured government domains (`gov.in`, `nic.in` by default).
-- OTPs are stored as **bcrypt hashes**, never plaintext: a database dump does not
-  hand anyone a working code.
-- 10-minute expiry · 5 wrong attempts then the code is invalidated · 30-second
-  resend cooldown · previous codes invalidated on resend. All enforced server-side.
-- Rate limited to 5 **successful** registrations per hour per IP. Failed
-  validations do not count — the limit exists to stop mail-bombing, not to lock out
-  someone who mistyped their password.
-- `USER_REGISTERED`, `EMAIL_VERIFIED` and `USER_APPROVED` are written to the audit
-  chain, which still verifies intact after the whole flow.
+Every number below was measured on the demo data and is shown live in the app, not
+typed into a slide.
 
-**Mail modes** (`MAIL_MODE` in `apps/api/.env`)
+| Claim | Measured | Where to check |
+|---|---|---|
+| Work gets done 30–40% faster | **32.5%** | Org Overview, top-right card |
+| Mood detection is 85–90% accurate | **87.5%** | `npm run eval:ml` |
+| Fraud detection ~92% precise | **11 of 12** | Fraud & Risk Center |
+| Records are tamper-evident | **962 blocks, 15 ms** | Blockchain Audit → Verify |
+| 30+ documented APIs | **57** | <http://localhost:4000/docs> |
 
-| Mode | Behaviour |
+**What is simulated, stated plainly:**
+
+- The **Parichay** government login screen is a *practice version*. The real one needs
+  official NIC approval. Every screen says **Sandbox**.
+- **Blockchain anchoring** is designed, not built. No cryptocurrency, no wallet, no
+  transaction.
+- The AI runs offline by default so a demo cannot fail on bad wifi.
+
+---
+
+## Built with
+
+| Layer | Technology |
 |---|---|
-| `console` *(default)* | Prints a boxed OTP to the API terminal, and the UI shows a labelled **DEV** chip. No network — works on a venue with no wifi. |
-| `ethereal` | Creates a throwaway inbox and logs a preview URL, so you can show the real branded email rendered. |
-| `smtp` | A real provider. Gmail needs an [App Password](https://myaccount.google.com/apppasswords), not the account password. |
-
-Delivery failure is never fatal: registration still succeeds and the user can
-resend. Losing an email must not lose an account.
-
-The signup UI is animated (Framer Motion) but every animation is gated on
-`prefers-reduced-motion`, and the entire four-step flow is completable by keyboard
-alone — both verified in the browser.
-
-## Claimed metrics, and where to check them
-
-| Claim | Measured | Where |
-|---|---|---|
-| 30–40% faster workflow execution | **32.5%** | Org Overview KPI. Mean cycle time, older half of completed tasks vs recent half. Computed per request. |
-| 85–90% sentiment accuracy | **87.5%** | `npm run eval:ml`, held-out corpus |
-| ~92% fraud detection precision | **11/12 = 92%** | Fraud & Risk Center. Labelled evaluation set only — runtime alerts are unlabelled and excluded so the figure cannot drift upward. |
-| 100% tamper-evident audit trail | 962 blocks, 15ms | `GET /audit/verify`, plus the tamper demo |
-| 30+ documented REST APIs | **51 operations** | <http://localhost:4000/docs> |
+| Website | Next.js 14, TypeScript, Tailwind CSS, Framer Motion |
+| Server | Node.js, Express, Prisma, PostgreSQL 16 |
+| AI | Python, FastAPI, scikit-learn, DistilBERT |
+| Security | SHA-256 hash chain, JWT sign-in, bcrypt passwords |
 
 ---
 
-## API
+## More reading
 
-Swagger UI at **<http://localhost:4000/docs>** — generated from JSDoc beside each
-route, so it cannot drift from the implementation. Sign in via `POST /auth/login`,
-click **Authorize**, paste the `accessToken`.
-
-| Tag | Ops | Notable |
-|---|---|---|
-| Auth | 9 | Password, refresh, Parichay sandbox, signup + OTP verify/resend |
-| Tasks | 9 | Lifecycle with enforced transitions and maker-checker separation |
-| Users | 5 | Directory plus per-user performance |
-| Departments | 5 | CRUD plus SLA policy editing |
-| Fraud | 5 | Alerts, triage, scan, precision, scatter |
-| Audit | 4 | Events, **verify**, entity history, Merkle anchors |
-| Analytics | 4 | KPIs, SLA, trends, workload |
-| Sentiment / Burnout | 6 | Team views and recompute |
-| Notifications / Reports / Chat | 8 | Bell feed, CSV exports, assistant |
-
-**Maker-checker separation** is enforced in the service on *both* paths that can
-reach `COMPLETED` (`/status` and `/review`): you cannot approve a task assigned to
-you, whatever your role.
+| File | What's in it |
+|---|---|
+| **[DEMO.md](DEMO.md)** | A rehearsed 7-minute script for showing this to judges |
+| **[TECHNICAL.md](TECHNICAL.md)** | Full technical reference — API, models, evaluation method |
+| **[DECISIONS.md](DECISIONS.md)** | Every engineering decision and *why*, including the mistakes |
 
 ---
 
-## Design — "GovTrust UI"
-
-A modern layer over NIC e-Office conventions: sober, data-dense, government-identity
-aware. Primary navy `#14417B`, dark sidebar `#0E2A52`, saffron `#FF9933` used for
-accents and active indicators **only** — never as body text on white, where it fails
-contrast. Light theme only, which is what survives a projector.
-
-- **WCAG 2.1 AA** — visible focus rings, keyboard-navigable tables and kanban,
-  aria-labels on icon buttons, skip-to-content link, `aria-live` on the verification
-  banner.
-- **Bilingual** — instant EN ⇄ हिंदी across navigation, KPI labels, status chips and
-  breadcrumbs. Task content stays as authored; translating a citizen's file note
-  would misrepresent the record. Missing a Hindi key is a **compile error**, not a
-  blank label found on stage.
-- Self-hosted Inter + Noto Sans Devanagari via `@fontsource` — `next/font/google`
-  fetches at build time and would fail an offline build.
-- Skeletons on every fetch, empty states with a next action, error states with retry.
-
-The sidebar mark is a generic circular "GoI" monogram. The **State Emblem of India is
-deliberately not used** — its use is restricted by law.
-
----
-
-## Seeded data
-
-Deterministic (fixed-seed PRNG), so the demo is identical on stage and in rehearsal:
-4 departments, 25 users, ~160 tasks over 90 days, ~380 updates, ~960 audit blocks.
-Content is hand-authored rather than faker-generated — faker's Indian locale produces
-name/designation/task combinations that read as fake to anyone who has seen a
-district office.
-
-Three patterns are planted deliberately and marked `PLANTED` in `prisma/seed.ts`:
-
-- **Burnout** — Ramesh Patel (Public Works): 14 active tasks, 6 overdue, after-hours
-  updates, rising negative sentiment → surfaces at **85/100, CRITICAL**.
-- **Fraud** — Vikas Meena (Revenue): 14 status changes inside two single-hour
-  night-time bursts, 3 self-approvals, one task closed in **4 minutes**.
-- **SLA story** — Health department breach cluster, recovering afterwards, so the
-  trend charts and the heatmap narrate a real improvement.
-
----
-
-## Non-goals
-
-Stated so nobody has to guess what is real:
-
-- **No real Parichay/NIC integration.** The screen is labelled Sandbox everywhere.
-- **No blockchain transactions.** Merkle roots are computed; anchoring is planned.
-- No Flutter app, no cloud file uploads, no WebSockets (dashboards poll every 30s),
-  no multi-tenancy, no dark mode.
-- Email **is** implemented (registration OTP and welcome mail), but defaults to
-  `console` mode so nothing leaves the machine unless you configure SMTP.
-
-## Environment notes
-
-- **Node 20+.** Built and verified on Node 25.
-- **Python 3.11–3.13 for ML model mode.** Core ML requirements are unpinned and
-  install on 3.14, but `torch` and `pydantic-core` have no 3.14 wheels — heuristic
-  mode (the default) works on any interpreter.
-- Prisma targets a dedicated `smartwork` schema, so it will not collide with
-  anything already in a database of the same name.
-- Copy `.env.example` to `.env` in `apps/api`, `apps/web` (`.env.local`) and
-  `services/ml` if you need to change defaults; the defaults work as-is.
+<p align="center">
+  <sub>Smart India Hackathon prototype · Aligned with the Digital India initiative</sub><br>
+  <sub>The circular emblem is a generic departmental monogram. The State Emblem of India is deliberately not used — its use is restricted by law.</sub>
+</p>

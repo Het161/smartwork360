@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 800" width="1180" height="800" role="img" aria-label="Isometric architecture diagram: browser, API server, ML service and PostgreSQL database, with animated request flow">
+  <defs>
+    <linearGradient id="top1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2E6FC7"/><stop offset="100%" stop-color="#1E5AAE"/></linearGradient>
+    <linearGradient id="top2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#17A2B8"/><stop offset="100%" stop-color="#0E7490"/></linearGradient>
+    <linearGradient id="top3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFB25E"/><stop offset="100%" stop-color="#FF9933"/></linearGradient>
+    <linearGradient id="top4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7C6BE0"/><stop offset="100%" stop-color="#5B48C9"/></linearGradient>
+    <linearGradient id="top5" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22A75C"/><stop offset="100%" stop-color="#0E7A3D"/></linearGradient>
+    <filter id="drop" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0F172A" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect width="1180" height="800" fill="#F6F8FB"/>
+
+  <!-- ground grid, isometric -->
+  <g stroke="#DCE4EF" stroke-width="1" opacity="0.75">
+    <path d="M60,300 L620,20"/><path d="M60,360 L680,50"/><path d="M60,420 L740,80"/>
+    <path d="M60,480 L800,110"/><path d="M60,540 L860,140"/><path d="M60,600 L920,170"/>
+    <path d="M60,660 L980,200"/><path d="M180,720 L1040,290"/><path d="M340,740 L1100,360"/>
+    <path d="M60,300 L560,550"/><path d="M120,270 L680,550"/><path d="M180,240 L800,550"/>
+    <path d="M240,210 L920,550"/><path d="M300,180 L1040,550"/><path d="M360,150 L1120,530"/>
+    <path d="M420,120 L1140,480"/><path d="M480,90 L1140,420"/><path d="M540,60 L1140,360"/>
+  </g>
+
+  <text x="48" y="52" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700" fill="#0F172A">How SMARTWORK 360 fits together</text>
+  <text x="48" y="78" font-family="Inter,system-ui,sans-serif" font-size="14" fill="#64748B">Four pieces. The dots show a request travelling through the system.</text>
+
+  <!--
+    Isometric block helper shape, drawn by hand per node:
+      top face  : rhombus
+      left face : darker
+      right face: darkest
+  -->
+
+  <!-- ============ 1. BROWSER (top left) ============ -->
+  <g filter="url(#drop)" transform="translate(150,150)">
+    <path d="M0,-58 L116,0 L0,58 L-116,0 Z" fill="url(#top1)"/>
+    <path d="M-116,0 L0,58 L0,102 L-116,44 Z" fill="#164B94"/>
+    <path d="M116,0 L0,58 L0,102 L116,44 Z" fill="#123C77"/>
+    <!-- little window on the top face -->
+    <g opacity="0.92">
+      <path d="M0,-40 L74,0 L0,40 L-74,0 Z" fill="#ffffff" fill-opacity="0.16"/>
+      <path d="M-44,-2 L0,-26 L44,-2" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2" fill="none"/>
+      <path d="M-30,8 L0,-8 L30,8" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2" fill="none"/>
+    </g>
+  </g>
+  <g font-family="Inter,system-ui,sans-serif" text-anchor="middle">
+    <text x="150" y="285" font-size="17" font-weight="700" fill="#0F172A">Browser</text>
+    <text x="150" y="306" font-size="12.5" fill="#475569">Next.js 14 · port 3000</text>
+    <text x="150" y="324" font-size="12.5" fill="#64748B">Dashboards · EN / हिंदी</text>
+  </g>
+
+  <!-- ============ 2. API SERVER (centre) ============ -->
+  <g filter="url(#drop)" transform="translate(560,270)">
+    <path d="M0,-70 L140,0 L0,70 L-140,0 Z" fill="url(#top2)"/>
+    <path d="M-140,0 L0,70 L0,128 L-140,58 Z" fill="#0C6478"/>
+    <path d="M140,0 L0,70 L0,128 L140,58 Z" fill="#095161"/>
+    <g opacity="0.9">
+      <path d="M0,-46 L92,0 L0,46 L-92,0 Z" fill="#ffffff" fill-opacity="0.14"/>
+      <g stroke="#ffffff" stroke-opacity="0.5" stroke-width="2">
+        <path d="M-46,0 L-16,-15 L14,0 L44,-15"/>
+      </g>
+    </g>
+  </g>
+  <g font-family="Inter,system-ui,sans-serif" text-anchor="middle">
+    <text x="560" y="432" font-size="17" font-weight="700" fill="#0F172A">API server</text>
+    <text x="560" y="453" font-size="12.5" fill="#475569">Express + Prisma · port 4000</text>
+    <text x="560" y="471" font-size="12.5" fill="#64748B">57 endpoints · rules · security</text>
+  </g>
+
+  <!-- ============ 3. AUDIT CHAIN (small block on top of API) ============ -->
+  <g filter="url(#drop)" transform="translate(560,150)">
+    <path d="M0,-34 L68,0 L0,34 L-68,0 Z" fill="url(#top3)"/>
+    <path d="M-68,0 L0,34 L0,64 L-68,30 Z" fill="#E07A1F"/>
+    <path d="M68,0 L0,34 L0,64 L68,30 Z" fill="#B85F10"/>
+    <g transform="translate(0,2)" opacity="0.95">
+      <path d="M0,-12 L0,-2 M-8,-7 L8,-7" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M-11,-6 a11,11 0 0 0 22,0" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+    </g>
+    <animateTransform attributeName="transform" type="translate"
+                      values="0,0; 0,-9; 0,0" dur="4s" repeatCount="indefinite" additive="sum"/>
+  </g>
+  <g font-family="Inter,system-ui,sans-serif" text-anchor="middle">
+    <text x="560" y="106" font-size="14" font-weight="700" fill="#B85F10">Audit chain</text>
+    <text x="560" y="124" font-size="11.5" fill="#94703A">every change is sealed</text>
+  </g>
+
+  <!-- ============ 4. ML SERVICE (top right) ============ -->
+  <g filter="url(#drop)" transform="translate(950,210)">
+    <path d="M0,-56 L112,0 L0,56 L-112,0 Z" fill="url(#top4)"/>
+    <path d="M-112,0 L0,56 L0,100 L-112,44 Z" fill="#4C3BB0"/>
+    <path d="M112,0 L0,56 L0,100 L112,44 Z" fill="#3D2E90"/>
+    <g opacity="0.92" stroke="#ffffff" stroke-opacity="0.6" stroke-width="2" fill="none">
+      <circle cx="-26" cy="-4" r="5" fill="#ffffff" fill-opacity="0.5"/>
+      <circle cx="4" cy="-18" r="5" fill="#ffffff" fill-opacity="0.5"/>
+      <circle cx="4" cy="10" r="5" fill="#ffffff" fill-opacity="0.5"/>
+      <circle cx="34" cy="-4" r="5" fill="#ffffff" fill-opacity="0.5"/>
+      <path d="M-26,-4 L4,-18 M-26,-4 L4,10 M4,-18 L34,-4 M4,10 L34,-4"/>
+    </g>
+  </g>
+  <g font-family="Inter,system-ui,sans-serif" text-anchor="middle">
+    <text x="950" y="345" font-size="17" font-weight="700" fill="#0F172A">AI service</text>
+    <text x="950" y="366" font-size="12.5" fill="#475569">Python FastAPI · port 8000</text>
+    <text x="950" y="384" font-size="12.5" fill="#64748B">mood · burnout · fraud · chat</text>
+  </g>
+
+  <!-- ============ 5. DATABASE (bottom centre) ============ -->
+  <g filter="url(#drop)" transform="translate(560,590)">
+    <path d="M0,-62 L124,0 L0,62 L-124,0 Z" fill="url(#top5)"/>
+    <path d="M-124,0 L0,62 L0,112 L-124,50 Z" fill="#0B6633"/>
+    <path d="M124,0 L0,62 L0,112 L124,50 Z" fill="#085227"/>
+    <g opacity="0.9">
+      <ellipse cx="0" cy="-14" rx="46" ry="23" fill="#ffffff" fill-opacity="0.20"/>
+      <ellipse cx="0" cy="0" rx="46" ry="23" fill="#ffffff" fill-opacity="0.14"/>
+      <ellipse cx="0" cy="14" rx="46" ry="23" fill="#ffffff" fill-opacity="0.10"/>
+    </g>
+  </g>
+  <g font-family="Inter,system-ui,sans-serif" text-anchor="middle">
+    <text x="560" y="744" font-size="17" font-weight="700" fill="#0F172A">Database</text>
+    <text x="560" y="762" font-size="12.5" fill="#475569">PostgreSQL 16</text>
+  </g>
+
+  <!-- ============ CONNECTIONS ============ -->
+  <g fill="none" stroke-linecap="round">
+    <!-- browser -> api -->
+    <path id="p_web_api" d="M266,194 C360,222 450,244 500,262" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="7 7"/>
+    <!-- api -> ml -->
+    <path id="p_api_ml" d="M700,268 C780,250 840,236 890,224" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="7 7"/>
+    <!-- api -> db -->
+    <path id="p_api_db" d="M560,398 L560,528" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="7 7"/>
+    <!-- audit -> db (the sealed copy) -->
+    <path id="p_audit_db" d="M628,180 C760,300 700,470 610,532" stroke="#FF9933" stroke-width="2.5" stroke-dasharray="6 8" opacity="0.85"/>
+  </g>
+
+  <!-- travelling dots -->
+  <g>
+    <circle r="6" fill="#1E5AAE">
+      <animateMotion dur="2.6s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1">
+        <mpath href="#p_web_api"/>
+      </animateMotion>
+      <animate attributeName="opacity" values="0;1;1;0" dur="2.6s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="6" fill="#0E7490">
+      <animateMotion dur="2.6s" begin="0.9s" repeatCount="indefinite">
+        <mpath href="#p_api_db"/>
+      </animateMotion>
+      <animate attributeName="opacity" values="0;1;1;0" dur="2.6s" begin="0.9s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="6" fill="#5B48C9">
+      <animateMotion dur="2.6s" begin="1.3s" repeatCount="indefinite">
+        <mpath href="#p_api_ml"/>
+      </animateMotion>
+      <animate attributeName="opacity" values="0;1;1;0" dur="2.6s" begin="1.3s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="6" fill="#FF9933">
+      <animateMotion dur="3.4s" begin="1.1s" repeatCount="indefinite">
+        <mpath href="#p_audit_db"/>
+      </animateMotion>
+      <animate attributeName="opacity" values="0;1;1;0" dur="3.4s" begin="1.1s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- edge labels -->
+  <g font-family="Inter,system-ui,sans-serif" font-size="12" fill="#475569">
+    <text x="336" y="212" transform="rotate(11 336 212)">you click something</text>
+    <text x="586" y="512" fill="#0E7490">saves the change</text>
+    <text x="742" y="234" transform="rotate(-11 742 234)">asks the AI</text>
+    <text x="700" y="392" fill="#B85F10" font-weight="600">seals a copy that</text>
+    <text x="700" y="408" fill="#B85F10" font-weight="600">cannot be edited</text>
+  </g>
+
+  <!-- offline note -->
+  <g transform="translate(830,470)">
+    <rect width="316" height="86" rx="10" fill="#ffffff" stroke="#E2E8F0"/>
+    <circle cx="24" cy="30" r="7" fill="#0E7A3D"/>
+    <text x="42" y="28" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#0F172A">Works with no internet</text>
+    <text x="42" y="48" font-family="Inter,system-ui,sans-serif" font-size="11.5" fill="#475569">If the AI service is off, the API does</text>
+    <text x="42" y="64" font-family="Inter,system-ui,sans-serif" font-size="11.5" fill="#475569">the same maths itself. Nothing breaks.</text>
+  </g>
+</svg>
