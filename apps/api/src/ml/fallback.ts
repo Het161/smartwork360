@@ -74,8 +74,11 @@ export function anomalyFallback(events: AnomalyRow[]) {
     const reasons: string[] = [];
     let score = 0;
 
-    if (e.nightHourRatio > 0.35) {
-      score += Math.min(0.4, e.nightHourRatio * 0.5);
+    // 0.20 is ~3× the observed organisational baseline (most staff record 5–10% of
+    // their actions outside 06:00–22:00). A higher cut-off only fires on someone
+    // working exclusively at night, which is rarer than the misuse we want to catch.
+    if (e.nightHourRatio > 0.2) {
+      score += Math.min(0.4, e.nightHourRatio * 1.2);
       reasons.push('night_hour_ratio');
     }
     if (e.actionsPerHour > 6) {

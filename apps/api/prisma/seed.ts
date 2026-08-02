@@ -78,6 +78,25 @@ const daysAgo = (d: number, hour = 10, minute = 0) => {
 
 const addHours = (date: Date, h: number) => new Date(date.getTime() + h * HOUR);
 
+/**
+ * Snaps a timestamp into a plausible government office working day.
+ *
+ * Without this, interpolated update times spread uniformly across 24 hours and
+ * EVERY employee ends up with a ~50% night-time activity ratio — which would make
+ * the after-hours burnout factor and the fraud detector's `night_hour_ratio`
+ * signal meaningless. Only the deliberately planted personas work at night.
+ */
+function officeHours(date: Date): Date {
+  const d = new Date(date);
+  // ~12% of updates land in the early evening (18:00–20:00); the rest 09:00–17:59.
+  d.setHours(chance(0.12) ? randInt(18, 19) : randInt(9, 17), randInt(0, 59), randInt(0, 59), 0);
+  // Saturday/Sunday work is rare — push weekend updates to the following Monday.
+  const day = d.getDay();
+  if (day === 0) d.setDate(d.getDate() + 1);
+  else if (day === 6) d.setDate(d.getDate() + 2);
+  return d;
+}
+
 /** ISO week bucket label, used by the SLA story and the trend charts. */
 function weekStartOf(date: Date): Date {
   const d = new Date(date);
@@ -267,14 +286,36 @@ async function main() {
     }
 
     const refNo = nextRefNo(opts.deptCode, createdAt);
-    const startedAt =
-      opts.status === 'PENDING' ? null : addHours(createdAt, randInt(2, 30) + rand());
+
+    const cycle =
+      opts.status === 'COMPLETED'
+        ? (opts.completeAfterHours ??
+          randInt(Math.floor(slaHours * 0.3), Math.floor(slaHours * 1.2)))
+        : null;
+
+    // A sub-hour cycle is the planted "physically impossible turnaround" case. It
+    // must survive verbatim, so the whole start→complete pair stays in minutes and
+    // skips the working-hours snap entirely.
+    const isSprint = cycle !== null && cycle < 1;
+
+    // Workflow transitions otherwise happen during the working day — these become
+    // audit blocks, and the fraud detector reads their hour-of-day.
+    let startedAt: Date | null = null;
+    if (opts.status !== 'PENDING') {
+      startedAt = isSprint
+        ? addHours(createdAt, cycle! * 0.3)
+        : officeHours(addHours(createdAt, randInt(2, 30)));
+    }
 
     let completedAt: Date | null = null;
-    if (opts.status === 'COMPLETED') {
-      const cycle = opts.completeAfterHours ?? randInt(Math.floor(slaHours * 0.3), Math.floor(slaHours * 1.2));
-      completedAt = addHours(createdAt, cycle);
+    if (cycle !== null) {
+      completedAt = isSprint ? addHours(createdAt, cycle) : officeHours(addHours(createdAt, cycle));
       if (completedAt > NOW) completedAt = new Date(NOW.getTime() - randInt(1, 20) * HOUR);
+      // Snapping to office hours must never invert the workflow order.
+      if (!isSprint && startedAt && completedAt <= startedAt) {
+        completedAt = addHours(startedAt, randInt(2, 8));
+      }
+      if (completedAt > NOW) completedAt = new Date(NOW.getTime() - HOUR);
     }
 
     const task = await prisma.task.create({
@@ -310,11 +351,13 @@ async function main() {
       audit('TASK', task.id, 'TASK_STATUS_CHANGED', opts.assignee.id, { refNo, from: 'PENDING', to: 'IN_PROGRESS' }, startedAt);
     }
     if (opts.status === 'UNDER_REVIEW' && startedAt) {
-      audit('TASK', task.id, 'TASK_STATUS_CHANGED', opts.assignee.id, { refNo, from: 'IN_PROGRESS', to: 'UNDER_REVIEW' }, addHours(startedAt, randInt(4, 40)));
+      const reviewAt = officeHours(addHours(startedAt, randInt(4, 40)));
+      audit('TASK', task.id, 'TASK_STATUS_CHANGED', opts.assignee.id, { refNo, from: 'IN_PROGRESS', to: 'UNDER_REVIEW' }, reviewAt > NOW ? NOW : reviewAt);
     }
     if (completedAt && startedAt) {
-      const reviewAt = new Date(completedAt.getTime() - randInt(1, 8) * HOUR);
-      audit('TASK', task.id, 'TASK_STATUS_CHANGED', opts.assignee.id, { refNo, from: 'IN_PROGRESS', to: 'UNDER_REVIEW' }, reviewAt > startedAt ? reviewAt : addHours(startedAt, 1));
+      const candidate = new Date(completedAt.getTime() - randInt(1, 8) * HOUR);
+      const reviewAt = candidate > startedAt ? candidate : addHours(startedAt, 1);
+      audit('TASK', task.id, 'TASK_STATUS_CHANGED', opts.assignee.id, { refNo, from: 'IN_PROGRESS', to: 'UNDER_REVIEW' }, reviewAt);
       audit('TASK', task.id, 'TASK_APPROVED', manager.id, { refNo, note: pick(REVIEW_NOTES.approve) }, completedAt);
       audit('TASK', task.id, 'TASK_STATUS_CHANGED', manager.id, { refNo, from: 'UNDER_REVIEW', to: 'COMPLETED' }, completedAt);
     }
@@ -419,6 +462,34 @@ async function main() {
     }
   }
 
+  /* --------------- PLANTED #0 — Kavita Joshi, the demo EMPLOYEE account ---- */
+
+  // The login screen offers Kavita as the Employee quick-login, so her dashboard is
+  // the first thing a judge sees. She needs a full, healthy queue: a strong
+  // completion record (all within SLA) plus live work in every column.
+  const kavitaEntry = employees.find((e) => e.spec.name === 'Kavita Joshi')!;
+  for (let i = 0; i < 10; i += 1) {
+    await createTask({
+      deptCode: 'REV',
+      assignee: kavitaEntry.user,
+      status: 'COMPLETED',
+      priority: i % 3 === 0 ? 'HIGH' : 'MEDIUM',
+      createdDaysAgo: randInt(8, 70),
+      // Comfortably inside SLA — this is what a 90%+ on-time record looks like.
+      completeAfterHours: randInt(14, 40),
+    });
+  }
+  for (const [i, status] of (['IN_PROGRESS', 'IN_PROGRESS', 'PENDING', 'UNDER_REVIEW'] as TaskStatus[]).entries()) {
+    await createTask({
+      deptCode: 'REV',
+      assignee: kavitaEntry.user,
+      status,
+      priority: i === 0 ? 'HIGH' : 'MEDIUM',
+      createdDaysAgo: randInt(1, 9),
+      dueInHours: i === 0 ? 6 : undefined,
+    });
+  }
+
   /* ------------------------------- PLANTED #1 — Ramesh Patel, burnout ---- */
 
   const rameshTasks: SeededTask[] = [];
@@ -455,7 +526,10 @@ async function main() {
   const nightAudit: { at: Date; task: SeededTask }[] = [];
   vikasNightTasks.forEach((task, i) => {
     const night = i < 7 ? 8 : 6; // two separate nights
-    const at = daysAgo(night, 1 + Math.floor((i % 7) / 4), randInt(0, 59)); // 01:00–03:00
+    // All seven changes on each night land inside a SINGLE hour. A bulk record
+    // rewrite is one sitting, not a leisurely spread — and this is what makes the
+    // burst detectable as `actionsPerHour` rather than only as a night-time ratio.
+    const at = daysAgo(night, i < 7 ? 1 : 2, randInt(0, 59));
     nightAudit.push({ at, task });
     audit('TASK', task.id, 'TASK_STATUS_CHANGED', vikasEntry.user.id, { refNo: task.refNo, from: 'IN_PROGRESS', to: 'UNDER_REVIEW', afterHours: true }, at);
   });
@@ -513,9 +587,10 @@ async function main() {
     const count = task.status === 'PENDING' ? randInt(0, 1) : randInt(1, 4);
 
     for (let i = 0; i < count; i += 1) {
-      const at = new Date(
+      const raw = new Date(
         task.createdAt.getTime() + ((i + 1) / (count + 1)) * (Math.min(NOW.getTime(), (task.completedAt ?? NOW).getTime()) - task.createdAt.getTime()),
       );
+      const at = officeHours(raw);
       if (at > NOW) continue;
 
       // Overdue work and Ramesh's queue skew negative; everything else is mixed.
@@ -539,8 +614,8 @@ async function main() {
     // Managers leave review notes on reviewed / completed work.
     if (task.status === 'UNDER_REVIEW' || task.status === 'COMPLETED') {
       if (chance(0.55)) {
-        const at = task.completedAt ?? new Date(NOW.getTime() - randInt(2, 40) * HOUR);
-        await addUpdate(task, task.creatorId, 'positive', 'REVIEW_NOTE', at, undefined, pick(REVIEW_NOTES.approve));
+        const at = officeHours(task.completedAt ?? new Date(NOW.getTime() - randInt(2, 40) * HOUR));
+        await addUpdate(task, task.creatorId, 'positive', 'REVIEW_NOTE', at > NOW ? NOW : at, undefined, pick(REVIEW_NOTES.approve));
       }
     }
   }
@@ -756,14 +831,16 @@ async function main() {
       });
     }
   }
+  // Announcements go to everyone — the Employee dashboard has an Announcements
+  // card, and it must never be empty on a fresh seed.
   for (const a of ANNOUNCEMENTS) {
-    for (const u of [admin, ...managers.values()]) {
+    for (const u of [admin, ...managers.values(), ...employees.map((e) => e.user)]) {
       notifications.push({
         userId: u.id,
         title: a.title,
         body: a.body,
         link: null,
-        read: chance(0.5),
+        read: chance(0.4),
         createdAt: daysAgo(randInt(1, 9), 11),
       });
     }

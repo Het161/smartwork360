@@ -99,6 +99,8 @@ export const listTasksQuerySchema = z.object({
   assigneeId: z.string().optional(),
   departmentId: z.string().optional(),
   overdue: z.coerce.boolean().optional(),
+  /** Excludes COMPLETED — "what is still on someone's desk". */
+  open: z.coerce.boolean().optional(),
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),

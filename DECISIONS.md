@@ -50,3 +50,20 @@ Every non-obvious engineering decision, with one line of reasoning. Newest phase
 | 2.10 | Open tasks whose SLA window silently elapsed are pushed into the future by the seed | Without this, 73 of 144 tasks read as overdue — "everything is late" contradicts the improvement story the trend charts are meant to tell. Now exactly 23 are overdue and 9 are due today. |
 | 2.11 | Priority sorting is done in memory | `Priority` is a Postgres enum, so `ORDER BY priority` sorts alphabetically (CRITICAL, HIGH, LOW, MEDIUM) — wrong. The shared `PRIORITY_ORDER` map is applied after fetch. |
 | 2.12 | CSV exports are prefixed with a UTF-8 BOM | Excel otherwise mangles the Devanagari department names. |
+
+## Phase 3 — Web foundation + Employee
+
+| # | Decision | Reasoning |
+|---|---|---|
+| 3.1 | `Dict` widens `as const` literals via a mapped type | With a plain `typeof en`, every Hindi string had to *equal* the English literal. The mapped type keeps keys required (a missing translation is still a compile error) while allowing real translations. |
+| 3.2 | i18n starts at `en` and applies the stored language in an effect | Reading localStorage during render would desynchronise server and client HTML and trigger a hydration mismatch. |
+| 3.3 | One silent refresh + replay on a 401, coalesced across concurrent calls | A 15-minute access token must never interrupt a demo mid-click, and a dashboard firing six parallel queries must not fire six refreshes. |
+| 3.4 | Avatars are deterministic initials, not images | No network request, so they render offline; and the same person keeps the same colour on every screen. |
+| 3.5 | Drawers/modals are built on Radix Dialog | Focus trapping, Escape handling and scroll locking are WCAG requirements, not conveniences — Radix gets them right. |
+| 3.6 | Added an `open=true` filter to `GET /tasks` | "Today's Focus" sorted by `dueDate asc` returned the oldest *completed* tasks and rendered empty. Filtering server-side beats over-fetching 100 rows to discard most of them. |
+| 3.7 | Seed snaps update/transition timestamps into working hours (`officeHours`) | Uniformly-distributed timestamps gave **every** employee a ~50% night-time activity ratio, which destroyed the meaning of the after-hours burnout factor and the fraud detector's `night_hour_ratio`. Only the planted personas work at night now. |
+| 3.8 | Sub-hour cycle times bypass the working-hours snap | The planted "completed in 4 minutes" case is the evidence behind an `UNUSUAL_CYCLE_TIME` alert; snapping it to office hours silently destroyed it (it became 23h). |
+| 3.9 | Vikas's night burst is concentrated into one hour per night | A bulk record rewrite happens in a single sitting. It also makes the burst detectable as `actionsPerHour`, not only as a night-time ratio. |
+| 3.10 | `night_hour_ratio` threshold lowered 0.35 → 0.20 | Measured against the seeded population: ordinary staff record 5–11% of actions at night, so 20% is already ~3× baseline. 0.35 only fired on someone working *exclusively* at night. |
+| 3.11 | Kavita Joshi (the Employee quick-login) gets a planted healthy queue | Her dashboard is the first screen a judge sees; with the plain random allocation she had 2 tasks and 33% on-time, which undersells the product. |
+| 3.12 | Announcements are seeded for every user, not just managers | The Employee dashboard has an Announcements card and it must never be empty on a fresh seed. |

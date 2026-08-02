@@ -55,6 +55,7 @@ taskRouter.use(requireAuth);
  *       - { in: query, name: assigneeId, schema: { type: string } }
  *       - { in: query, name: departmentId, schema: { type: string } }
  *       - { in: query, name: overdue, schema: { type: boolean } }
+ *       - { in: query, name: open, schema: { type: boolean }, description: Exclude completed tasks }
  *       - { in: query, name: q, schema: { type: string }, description: Search reference number or title }
  *       - { in: query, name: page, schema: { type: integer, default: 1 } }
  *       - { in: query, name: pageSize, schema: { type: integer, default: 20 } }
@@ -79,6 +80,7 @@ taskRouter.get(
         q.assigneeId ? { assigneeId: q.assigneeId } : {},
         q.departmentId ? { departmentId: q.departmentId } : {},
         q.overdue ? { dueDate: { lt: now }, status: { not: 'COMPLETED' } } : {},
+        q.open ? { status: { not: 'COMPLETED' } } : {},
         q.q
           ? {
               OR: [
