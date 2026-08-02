@@ -86,14 +86,18 @@ const addHours = (date: Date, h: number) => new Date(date.getTime() + h * HOUR);
  * the after-hours burnout factor and the fraud detector's `night_hour_ratio`
  * signal meaningless. Only the deliberately planted personas work at night.
  */
-function officeHours(date: Date): Date {
+function officeHours(date: Date, shiftWeekends = true): Date {
   const d = new Date(date);
   // ~12% of updates land in the early evening (18:00–20:00); the rest 09:00–17:59.
   d.setHours(chance(0.12) ? randInt(18, 19) : randInt(9, 17), randInt(0, 59), randInt(0, 59), 0);
   // Saturday/Sunday work is rare — push weekend updates to the following Monday.
-  const day = d.getDay();
-  if (day === 0) d.setDate(d.getDate() + 1);
-  else if (day === 6) d.setDate(d.getDate() + 2);
+  // NOT applied to completion times: adding 24–48h to a task with a 24h SLA would
+  // silently turn an intended on-time completion into a breach.
+  if (shiftWeekends) {
+    const day = d.getDay();
+    if (day === 0) d.setDate(d.getDate() + 1);
+    else if (day === 6) d.setDate(d.getDate() + 2);
+  }
   return d;
 }
 
@@ -302,18 +306,38 @@ async function main() {
     // audit blocks, and the fraud detector reads their hour-of-day.
     let startedAt: Date | null = null;
     if (opts.status !== 'PENDING') {
+      // Pick-up time is a fraction of the SLA window, not a flat 2–30h. A CRITICAL
+      // task with a 24h deadline that is only started after 30h could never meet
+      // its SLA no matter how fast the work itself was.
+      const maxPickup = Math.max(2, Math.floor(slaHours * 0.3));
       startedAt = isSprint
         ? addHours(createdAt, cycle! * 0.3)
-        : officeHours(addHours(createdAt, randInt(2, 30)));
+        : officeHours(addHours(createdAt, randInt(1, maxPickup)), false);
     }
 
     let completedAt: Date | null = null;
     if (cycle !== null) {
-      completedAt = isSprint ? addHours(createdAt, cycle) : officeHours(addHours(createdAt, cycle));
+      completedAt = isSprint
+        ? addHours(createdAt, cycle)
+        : officeHours(addHours(createdAt, cycle), false);
       if (completedAt > NOW) completedAt = new Date(NOW.getTime() - randInt(1, 20) * HOUR);
       // Snapping to office hours must never invert the workflow order.
       if (!isSprint && startedAt && completedAt <= startedAt) {
         completedAt = addHours(startedAt, randInt(2, 8));
+      }
+      // The intended cycle decides whether this task met its SLA. Rounding to a
+      // working hour must not flip that outcome in either direction.
+      const intendedOnTime = cycle < slaHours;
+      if (!isSprint && intendedOnTime && completedAt > dueDate) {
+        completedAt = new Date(dueDate.getTime() - randInt(1, 5) * HOUR);
+      }
+      if (!isSprint && !intendedOnTime && completedAt <= dueDate) {
+        completedAt = new Date(dueDate.getTime() + randInt(2, 24) * HOUR);
+      }
+      // Final ordering guard — nudge by minutes so it cannot re-cross the deadline
+      // that the clamp above just established.
+      if (startedAt && completedAt <= startedAt) {
+        completedAt = new Date(startedAt.getTime() + 30 * 60_000);
       }
       if (completedAt > NOW) completedAt = new Date(NOW.getTime() - HOUR);
     }
@@ -399,11 +423,13 @@ async function main() {
    * a task is overdue *and* in-progress, not overdue instead of in-progress.
    */
   const PRIORITIES: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+  // Enough CRITICAL work that the per-priority SLA breakdown is a meaningful
+  // percentage rather than a 1-in-2 coin flip.
   const weightedPriority = (): Priority => {
     const r = rand();
-    if (r < 0.12) return 'CRITICAL';
-    if (r < 0.4) return 'HIGH';
-    if (r < 0.8) return 'MEDIUM';
+    if (r < 0.18) return 'CRITICAL';
+    if (r < 0.45) return 'HIGH';
+    if (r < 0.82) return 'MEDIUM';
     return 'LOW';
   };
 
@@ -420,11 +446,20 @@ async function main() {
       const pool = employeesByDept.get(deptCode)!;
       const assignee = pick(pool).user;
       const forceOverdue = i < bucket.overdue;
+      // Drawn ONCE — the cycle time is derived from this task's own SLA window, so
+      // a CRITICAL task is measured against the critical deadline, not a random one.
+      const priority = weightedPriority();
+      const effectiveSla = slaOverrides[deptCode]?.[priority] ?? DEFAULT_SLA_HOURS[priority];
 
-      // Completed work is spread across the full 90-day window so the trend charts
-      // have history; open work stays recent, because a real office does not carry
-      // three-month-old pending files in its active queue.
-      let createdDaysAgo = bucket.status === 'COMPLETED' ? randInt(2, 88) : randInt(1, 20);
+      // Completed work is spread EVENLY across the 90-day window rather than drawn
+      // at random: random ages cluster, and the resulting week-to-week gaps make
+      // both the trend chart and the older-half/recent-half cycle-time comparison
+      // noisier than the trend they are meant to show. Open work stays recent —
+      // a real office does not carry three-month-old pending files in its queue.
+      let createdDaysAgo =
+        bucket.status === 'COMPLETED'
+          ? Math.max(2, Math.round(88 - (i / Math.max(1, bucket.count - 1)) * 84) + randInt(-2, 2))
+          : randInt(1, 20);
       let slaHours: number | undefined;
       let completeAfterHours: number | undefined;
       // A handful of open tasks land inside today to populate the "Due Today" KPI.
@@ -436,23 +471,30 @@ async function main() {
       // 45–36 ago) get a compressed deadline so they breach; everything after week 5
       // recovers. This produces a visible dip-and-recovery in the trend charts.
 
-      if (deptCode === 'HLT' && bucket.status === 'COMPLETED' && chance(0.45)) {
+      if (deptCode === 'HLT' && bucket.status === 'COMPLETED' && chance(0.3)) {
         createdDaysAgo = randInt(36, 45);
         slaHours = 18;
         completeAfterHours = randInt(30, 70); // breaches
       } else if (bucket.status === 'COMPLETED') {
-        // Cycle times shrink over the window: older tasks are slower than recent
-        // ones. This is what the "30–40% faster" analytics chart measures.
-        const recencyFactor = createdDaysAgo > 45 ? randInt(75, 115) : randInt(40, 70);
-        const base = DEFAULT_SLA_HOURS[weightedPriority()];
-        completeAfterHours = Math.max(2, Math.round((base * recencyFactor) / 100));
+        /**
+         * Cycle time as a percentage of the task's own SLA window, ramped smoothly
+         * by age: ~110% for 90-day-old work down to ~50% for work raised this week.
+         *
+         * A smooth ramp rather than two random bands matters — the KPI compares the
+         * mean of the older half against the mean of the recent half, and with
+         * random bands the priority mix of each half adds more noise than the trend
+         * itself carries (it measured 7.9%, well outside the claimed range).
+         */
+        const ramp = 34 + (Math.min(createdDaysAgo, 88) / 88) * 92;
+        const recencyFactor = Math.max(15, ramp + randInt(-6, 6));
+        completeAfterHours = Math.max(2, Math.round((effectiveSla * recencyFactor) / 100));
       }
 
       await createTask({
         deptCode,
         assignee,
         status: bucket.status,
-        priority: weightedPriority(),
+        priority,
         createdDaysAgo,
         slaHours,
         forceOverdue,

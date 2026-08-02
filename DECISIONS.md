@@ -67,3 +67,20 @@ Every non-obvious engineering decision, with one line of reasoning. Newest phase
 | 3.10 | `night_hour_ratio` threshold lowered 0.35 → 0.20 | Measured against the seeded population: ordinary staff record 5–11% of actions at night, so 20% is already ~3× baseline. 0.35 only fired on someone working *exclusively* at night. |
 | 3.11 | Kavita Joshi (the Employee quick-login) gets a planted healthy queue | Her dashboard is the first screen a judge sees; with the plain random allocation she had 2 tasks and 33% on-time, which undersells the product. |
 | 3.12 | Announcements are seeded for every user, not just managers | The Employee dashboard has an Announcements card and it must never be empty on a fresh seed. |
+
+## Phase 4 — Manager + Admin
+
+| # | Decision | Reasoning |
+|---|---|---|
+| 4.1 | Kanban drag validates against `canTransition` **before** calling the API | The board and the server share the transition graph from `@smartwork/shared`; failing locally gives an instant readable reason instead of an optimistic move that snaps back. |
+| 4.2 | Drag is optimistic with rollback on error | The card must move the instant it is dropped; if the API rejects it, the previous board is restored and the reason is shown. |
+| 4.3 | Columns the card cannot legally move to dim during a drag | Teaches the workflow rules through the UI rather than through error messages. |
+| 4.4 | The drag handle is a separate control from the card body | Keyboard users can open the drawer without triggering a drag, and a 6px activation distance stops a click being read as a drag. |
+| 4.5 | The assignee picker shows each person's live load, sorted lightest-first | A manager should not pile another file onto whoever is already drowning — this is the screen where that decision is actually made. |
+| 4.6 | The sentiment-vs-load chart is labelled "Correlation, not causation" | Overlaying two series invites a causal reading the data does not support. |
+| 4.7 | **Seed bug:** `weightedPriority()` was called twice per task | The cycle time was derived from a *different* random priority than the task's own, so a CRITICAL task with a 24h SLA was routinely measured against LOW's 168h window — CRITICAL and HIGH showed 0% compliance. Now drawn once. |
+| 4.8 | **Seed bug:** `officeHours()` weekend-shifted completion times | Adding 24–48h to a task with a 24h SLA silently converted an intended on-time completion into a breach. Weekend shifting now applies to update timestamps only. |
+| 4.9 | **Seed bug:** pick-up time was a flat 2–30h regardless of SLA | A CRITICAL task could be *started* after its own 24h deadline had passed, making compliance impossible. Pick-up is now a fraction of the SLA window. |
+| 4.10 | Completion times are clamped so rounding cannot flip an SLA outcome | The intended cycle decides whether a task met its SLA; snapping to a working hour must not change that verdict in either direction. |
+| 4.11 | Completed-task ages are spread **evenly** across the 90-day window | Random ages cluster, leaving gaps in the trend chart and adding more noise to the older-half/recent-half cycle-time comparison than the trend itself carries (it measured 7.9% at one point). Evenly spread, the measured improvement is a stable 32.5%. |
+| 4.12 | The cycle-time improvement figure is displayed live, not hard-coded | Whatever the data says is what the screen shows. It currently reads 32.5% org-wide, inside the claimed 30–40% band, and would change honestly if the data did. |
