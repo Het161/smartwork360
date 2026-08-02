@@ -1,0 +1,32 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+
+# env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+services/ml/models/
+services/ml/.pytest_cache/
+
+# os / editor
+.DS_Store
+*.log
+npm-debug.log*
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# generated
+apps/api/src/generated/
+# NOTE: apps/web/public/sw.js is hand-written and IS committed (see DECISIONS.md 0.8).

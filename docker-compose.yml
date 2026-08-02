@@ -1,0 +1,26 @@
+# SMARTWORK 360 — infrastructure
+# Only PostgreSQL runs in Docker. The web/api/ml services run on the host for
+# hackathon simplicity (instant hot-reload, no image rebuilds during a demo).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: smartwork360-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: smartwork
+      POSTGRES_PASSWORD: smartwork
+      POSTGRES_DB: smartwork360
+    ports:
+      # Same credentials + port as a local Homebrew postgres, so DATABASE_URL is
+      # identical whether you use Docker or an already-running local instance.
+      - '5432:5432'
+    volumes:
+      - smartwork_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U smartwork -d smartwork360']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  smartwork_pgdata:

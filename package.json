@@ -1,0 +1,38 @@
+{
+  "name": "smartwork360",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SMARTWORK 360 — AI + Blockchain-backed Smart Task & Performance Management System for Government Offices",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @smartwork/shared && npm run build -w @smartwork/api && npm run build -w @smartwork/web",
+    "build:shared": "npm run build -w @smartwork/shared",
+    "dev": "npm run build:shared && concurrently -n api,web -c cyan,magenta \"npm run dev -w @smartwork/api\" \"npm run dev -w @smartwork/web\"",
+    "dev:api": "npm run dev -w @smartwork/api",
+    "dev:web": "npm run dev -w @smartwork/web",
+    "dev:ml": "cd services/ml && (test -d .venv || python3 -m venv .venv) && ./.venv/bin/python -m pip install -q -r requirements.txt && ./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "db:up": "docker compose up -d",
+    "db:push": "npm run db:push -w @smartwork/api",
+    "seed": "npm run build:shared && npm run seed -w @smartwork/api",
+    "demo:tamper": "npm run demo:tamper -w @smartwork/api",
+    "demo:reset": "npm run demo:reset -w @smartwork/api",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,css}\"",
+    "typecheck": "npm run typecheck -w @smartwork/shared && npm run typecheck -w @smartwork/api && npm run typecheck -w @smartwork/web"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,139 @@
+/* Self-hosted fonts (npm packages, no network at runtime or build time). */
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-sans-devanagari/400.css';
+@import '@fontsource/noto-sans-devanagari/500.css';
+@import '@fontsource/noto-sans-devanagari/600.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+    --font-deva: 'Noto Sans Devanagari', 'Inter Variable', sans-serif;
+
+    /* GovTrust palette — mirrored as CSS vars for chart libraries & inline SVG */
+    --gt-primary: #14417b;
+    --gt-primary-hover: #0f3363;
+    --gt-sidebar: #0e2a52;
+    --gt-saffron: #ff9933;
+    --gt-success: #0e7a3d;
+    --gt-warning: #b45309;
+    --gt-danger: #b3261e;
+    --gt-info: #1d4ed8;
+    --gt-teal: #0e7490;
+    --gt-violet: #6d28d9;
+    --gt-canvas: #f6f8fb;
+    --gt-border: #e2e8f0;
+    --gt-grid: #eef2f7;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-slate-900 antialiased;
+    font-family: var(--font-sans);
+    font-size: 14px;
+  }
+
+  /* Hindi content renders in Noto Sans Devanagari without a layout shift. */
+  :lang(hi),
+  [lang='hi'] {
+    font-family: var(--font-deva);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-semibold text-slate-900;
+  }
+
+  /* All statistics align in columns. */
+  .tabular,
+  .kpi-value,
+  table td,
+  table th {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* WCAG 2.1 AA — always-visible focus indication. */
+  :focus-visible {
+    outline: 2px solid var(--gt-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: #d9e4f3;
+  }
+
+  /* Slimmer scrollbars inside data-dense panels. */
+  .thin-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .thin-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 8px;
+  }
+  .thin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  .gt-card {
+    @apply rounded-card border border-borderx bg-card shadow-card;
+  }
+
+  .gt-label {
+    @apply text-xs font-medium uppercase tracking-wide text-slate-500;
+  }
+
+  /* Skip-to-content link — visible only when focused. */
+  .skip-link {
+    @apply sr-only;
+  }
+  .skip-link:focus {
+    @apply not-sr-only fixed left-4 top-4 z-[100] rounded-btn bg-primary px-4 py-2 text-sm font-semibold text-white shadow-pop;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded bg-slate-100;
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full animate-shimmer;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.65) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+
+  /* The saffron accent line used on the login panel and page headers. */
+  .tricolor-rule {
+    background: linear-gradient(90deg, #ff9933 0 33.33%, #ffffff 33.33% 66.66%, #138808 66.66% 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
