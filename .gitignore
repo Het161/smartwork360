@@ -14,7 +14,7 @@ coverage/
 # python
 __pycache__/
 *.py[cod]
-.venv/
+.venv*/
 venv/
 services/ml/models/
 services/ml/.pytest_cache/

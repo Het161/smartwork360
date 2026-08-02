@@ -1,14 +1,14 @@
-# --- always required (heuristic mode runs on these alone) ---
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
-pydantic==2.9.2
-python-dotenv==1.0.1
+# Core — everything the service needs to run in HEURISTIC_MODE (the default).
+#
+# Deliberately unpinned (lower bounds only) so pip can resolve wheels for whatever
+# interpreter is present. Hard pins broke on Python 3.14, where pydantic-core has
+# no prebuilt wheel and falls back to a Rust source build. The demo must never
+# depend on a working Rust toolchain.
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.9
+python-dotenv>=1.0
 
-# --- required for HEURISTIC_MODE=false (real models) ---
-# Kept in the same file so `pip install -r requirements.txt` gives the full
-# experience; the service degrades to heuristics automatically if imports fail.
-numpy>=1.26
-pandas>=2.1
-scikit-learn>=1.4
-torch>=2.2
-transformers>=4.40
+# For the real models, additionally install:
+#   pip install -r requirements-models.txt
+# then set HEURISTIC_MODE=false. See services/ml/README.md.

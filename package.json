@@ -2,7 +2,7 @@
   "name": "smartwork360",
   "version": "1.0.0",
   "private": true,
-  "description": "SMARTWORK 360 — AI + Blockchain-backed Smart Task & Performance Management System for Government Offices",
+  "description": "SMARTWORK 360 \u2014 AI + Blockchain-backed Smart Task & Performance Management System for Government Offices",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -21,7 +21,8 @@
     "demo:reset": "npm run demo:reset -w @smartwork/api",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,json,md,css}\"",
-    "typecheck": "npm run typecheck -w @smartwork/shared && npm run typecheck -w @smartwork/api && npm run typecheck -w @smartwork/web"
+    "typecheck": "npm run typecheck -w @smartwork/shared && npm run typecheck -w @smartwork/api && npm run typecheck -w @smartwork/web",
+    "eval:ml": "cd services/ml && (test -d .venv || python3 -m venv .venv) && ./.venv/bin/python -m pip install -q -r requirements.txt && ./.venv/bin/python eval/eval_sentiment.py"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",

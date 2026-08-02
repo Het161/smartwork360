@@ -1,0 +1,51 @@
+text,label
+"Verification completed, records matched. Forwarding the file today.",POSITIVE
+"Site visit done sir, no issues found. Report ready hai.",POSITIVE
+"Contractor was cooperative, joint measurement finished ahead of schedule.",POSITIVE
+"All documents received and cleared. Kaam ho gaya, closing this.",POSITIVE
+"Data reconciled with the portal — no variance. Good to close.",POSITIVE
+"Camp went smoothly, turnout was better than expected.",POSITIVE
+"Head teacher provided all registers immediately, inspection done on time.",POSITIVE
+"Sub-centre staff supported well, cold chain audit completed without any issue.",POSITIVE
+"Backlog cleared, batch submitted to the Tehsildar for signature.",POSITIVE
+"Thanks for the quick approval — dispatched the sanction letter today.",POSITIVE
+"Field team did a good job, all 9 sites covered in one day.",POSITIVE
+"Discrepancy resolved after cross-checking the old register. Theek hai now.",POSITIVE
+"Excellent cooperation from the village accountant, survey finished early.",POSITIVE
+"Payment released without any delay, contractor is satisfied.",POSITIVE
+"Badhiya kaam hua, all beneficiaries verified in one visit.",POSITIVE
+"Inspection report approved by the Executive Engineer, no deviation noted.",POSITIVE
+"Applicant documents are incomplete again, this is the third time. Very frustrating.",NEGATIVE
+"Delay ho raha hai because the village accountant is on leave, no alternate arrangement.",NEGATIVE
+"Contractor has not responded to two notices. Work is completely stuck.",NEGATIVE
+"Bahut load is there this week, I am not able to finish this on time.",NEGATIVE
+"Records are missing from the old register. Samajh nahi aa raha how to proceed.",NEGATIVE
+"Cold chain unit failed again, no support from the maintenance vendor.",NEGATIVE
+"Staff shortage is a serious problem, we are understaffed at the sub-centre.",NEGATIVE
+"This file has been pending hai for 3 weeks, no response from the higher office.",NEGATIVE
+"Site inspection could not happen, vehicle was not available. Very disappointing.",NEGATIVE
+"I am exhausted, too many tasks assigned this week and everything is urgent.",NEGATIVE
+"Portal is not working since morning, unable to upload the report.",NEGATIVE
+"Escalated to the Executive Engineer, the quality of work is unacceptable.",NEGATIVE
+"Dikkat is that the sanction amount is short, revised estimate will take time.",NEGATIVE
+"Data mismatch found again, will have to redo the whole reconciliation. Pareshan ho gaya.",NEGATIVE
+"The measurement book entries are wrong, contractor bill rejected.",NEGATIVE
+"No response from the sub-registrar office despite repeated reminders.",NEGATIVE
+"Overloaded with three inspections in one day, this is not workable.",NEGATIVE
+"Tender scrutiny is blocked, the technical committee has not met.",NEGATIVE
+"Started the verification, will update after the field visit.",NEUTRAL
+"File received from the branch, taking up for scrutiny.",NEUTRAL
+"Sent a reminder to the sub-registrar office for the pending statement.",NEUTRAL
+"Awaiting the third-party quality report before proceeding.",NEUTRAL
+"Coordinating with the block office for the schedule.",NEUTRAL
+"Photographs uploaded to the case file for record.",NEUTRAL
+"Have requested the applicant to submit the missing annexure.",NEUTRAL
+"Site visit scheduled for tomorrow morning.",NEUTRAL
+"Draft note prepared, sending for internal review.",NEUTRAL
+"Measurement book entries partially completed, will finish this week.",NEUTRAL
+"Discussed with the contractor, awaiting revised BOQ.",NEUTRAL
+"Data entry in progress for the remaining sub-centres.",NEUTRAL
+"Forwarded to the Tehsildar office for further action.",NEUTRAL
+"Meeting fixed for Thursday with the block education officer.",NEUTRAL
+"Register handed over to the section for indexing.",NEUTRAL
+"Case listed for hearing on the 18th.",NEUTRAL
