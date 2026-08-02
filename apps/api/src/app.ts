@@ -2,12 +2,12 @@ import express, { type Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import swaggerUi from 'swagger-ui-express';
 import { corsOrigins } from './config/env';
+import { countDocumentedRoutes, swaggerSpec } from './config/swagger';
+import { buildApiRouter } from './routes';
+import { errorHandler, notFoundHandler } from './middleware/errors';
 
-/**
- * Builds the Express application. Routers, Swagger and the SLA cron are mounted
- * here from Phase 1 onwards.
- */
 export function createApp(): Application {
   const app = express();
 
@@ -24,8 +24,28 @@ export function createApp(): Application {
   app.use(cookieParser());
 
   app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', service: 'smartwork360-api', time: new Date().toISOString() });
+    res.json({
+      status: 'ok',
+      service: 'smartwork360-api',
+      documentedRoutes: countDocumentedRoutes(),
+      time: new Date().toISOString(),
+    });
   });
+
+  app.use(
+    '/docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customSiteTitle: 'SMARTWORK 360 API',
+      swaggerOptions: { persistAuthorization: true, docExpansion: 'none', filter: true },
+    }),
+  );
+  app.get('/openapi.json', (_req, res) => res.json(swaggerSpec));
+
+  app.use('/api/v1', buildApiRouter());
+
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
   return app;
 }

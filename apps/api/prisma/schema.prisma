@@ -1,0 +1,281 @@
+// SMARTWORK 360 — data model
+// Every mutation of Task / User / Department / SLAPolicy / FraudAlert writes an
+// AuditEvent inside the SAME transaction, forming an unbroken SHA-256 hash chain.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  UNDER_REVIEW
+  COMPLETED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
+}
+
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+}
+
+enum TaskUpdateType {
+  COMMENT
+  PROGRESS
+  STATUS_CHANGE
+  REVIEW_NOTE
+}
+
+enum SentimentLabel {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+enum FraudType {
+  BULK_STATUS_CHANGE
+  AFTER_HOURS_SPIKE
+  SELF_APPROVAL
+  UNUSUAL_CYCLE_TIME
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  nameHi    String
+  createdAt DateTime @default(now())
+
+  users       User[]
+  tasks       Task[]
+  slaPolicies SLAPolicy[]
+
+  @@map("departments")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  designation  String
+  departmentId String
+  avatarSeed   String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  department Department @relation(fields: [departmentId], references: [id])
+
+  createdTasks   Task[]           @relation("TaskCreator")
+  assignedTasks  Task[]           @relation("TaskAssignee")
+  taskUpdates    TaskUpdate[]
+  auditEvents    AuditEvent[]
+  sentiments     SentimentRecord[]
+  burnoutScores  BurnoutScore[]
+  fraudAlerts    FraudAlert[]     @relation("AlertSubject")
+  reviewedAlerts FraudAlert[]     @relation("AlertReviewer")
+  notifications  Notification[]
+
+  @@index([departmentId])
+  @@index([role])
+  @@map("users")
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  refNo        String     @unique
+  title        String
+  description  String
+  priority     Priority
+  status       TaskStatus @default(PENDING)
+  creatorId    String
+  assigneeId   String
+  departmentId String
+  dueDate      DateTime
+  slaHours     Int
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+
+  creator    User       @relation("TaskCreator", fields: [creatorId], references: [id])
+  assignee   User       @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+
+  updates TaskUpdate[]
+  alerts  FraudAlert[]
+
+  @@index([assigneeId, status])
+  @@index([departmentId, status])
+  @@index([dueDate])
+  @@index([status])
+  @@map("tasks")
+}
+
+model TaskUpdate {
+  id          String         @id @default(cuid())
+  taskId      String
+  authorId    String
+  type        TaskUpdateType
+  note        String
+  progressPct Int?
+  createdAt   DateTime       @default(now())
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+
+  sentiment SentimentRecord?
+
+  @@index([taskId, createdAt])
+  @@index([authorId, createdAt])
+  @@map("task_updates")
+}
+
+/// The blockchain-style audit ledger. `chainIndex` is dense and sequential;
+/// `hash` covers prevHash + every field, so any row edit breaks verification.
+model AuditEvent {
+  id         String   @id @default(cuid())
+  chainIndex Int      @unique
+  entityType String
+  entityId   String
+  action     String
+  actorId    String?
+  payload    Json
+  createdAt  DateTime @default(now())
+  prevHash   String
+  hash       String
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_events")
+}
+
+/// Merkle checkpoint cut every ANCHOR_INTERVAL events. `externalTxHash` is a
+/// documented stub — no real chain call is ever made (see README "Non-goals").
+model Anchor {
+  id          String   @id @default(cuid())
+  anchorIndex Int      @unique
+  fromIndex   Int
+  toIndex     Int
+  merkleRoot  String
+  externalTxHash String
+  createdAt   DateTime @default(now())
+
+  @@map("anchors")
+}
+
+model SentimentRecord {
+  id           String         @id @default(cuid())
+  taskUpdateId String         @unique
+  userId       String
+  score        Float
+  label        SentimentLabel
+  modelVersion String
+  createdAt    DateTime       @default(now())
+
+  taskUpdate TaskUpdate @relation(fields: [taskUpdateId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("sentiment_records")
+}
+
+model BurnoutScore {
+  id        String    @id @default(cuid())
+  userId    String
+  weekStart DateTime
+  score     Int
+  riskLevel RiskLevel
+  factors   Json
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, weekStart])
+  @@index([riskLevel])
+  @@map("burnout_scores")
+}
+
+model FraudAlert {
+  id           String      @id @default(cuid())
+  type         FraudType
+  severity     RiskLevel
+  userId       String?
+  taskId       String?
+  anomalyScore Float
+  details      Json
+  status       AlertStatus @default(OPEN)
+  createdAt    DateTime    @default(now())
+  reviewedById String?
+  reviewNote   String?
+  /// Seeded ground truth for the honest precision statistic shown in the Fraud
+  /// Center. null = not part of the labelled evaluation set.
+  labelConfirmed Boolean?
+
+  user       User? @relation("AlertSubject", fields: [userId], references: [id])
+  reviewedBy User? @relation("AlertReviewer", fields: [reviewedById], references: [id])
+  task       Task? @relation(fields: [taskId], references: [id])
+
+  @@index([status, severity])
+  @@index([userId])
+  @@map("fraud_alerts")
+}
+
+model SLAPolicy {
+  id           String   @id @default(cuid())
+  departmentId String
+  priority     Priority
+  hours        Int
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, priority])
+  @@map("sla_policies")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+  @@map("notifications")
+}
