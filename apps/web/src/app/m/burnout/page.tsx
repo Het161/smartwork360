@@ -14,7 +14,7 @@ import { EmptyState, SkeletonCard } from '@/components/ui/states';
 import { RiskChip } from '@/components/chips';
 import { Avatar } from '@/components/avatar';
 import { MoraleGauge, ScoreDial } from '@/components/viz';
-import { cn } from '@/lib/utils';
+import { cn, weekStartOf } from '@/lib/utils';
 
 const FACTOR_LABEL: Record<string, string> = {
   activeLoad: 'Active workload',
@@ -64,6 +64,13 @@ export default function BurnoutPage() {
 
   const items = burnout.data?.items ?? [];
 
+  // Scores are stored per week. When nobody has recomputed since the week
+  // rolled over, the API serves the most recent week rather than nothing — so
+  // say which week is on screen instead of letting old scores read as today's.
+  const shownWeek = items[0]?.weekStart;
+  const staleWeek =
+    shownWeek !== undefined && new Date(shownWeek).getTime() < weekStartOf(new Date()).getTime();
+
   return (
     <>
       <PageHeader
@@ -82,6 +89,16 @@ export default function BurnoutPage() {
           </Button>
         }
       />
+
+      {staleWeek && shownWeek ? (
+        <div className="mb-4 rounded-card border border-borderx bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
+          Showing the week of{' '}
+          <strong>
+            {new Date(shownWeek).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+          </strong>
+          . Press <strong>Recompute</strong> for this week&rsquo;s scores.
+        </div>
+      ) : null}
 
       {message ? (
         <div className="mb-4 flex items-center justify-between gap-3 rounded-card border border-borderx bg-primary-50 px-4 py-2.5 text-sm text-primary">
@@ -128,7 +145,7 @@ export default function BurnoutPage() {
               <EmptyState
                 icon={<HeartPulse className="h-5 w-5" aria-hidden />}
                 title={t.common.noData}
-                body="No burnout scores have been computed for this week yet."
+                body="No burnout scores have been computed yet."
                 action={
                   <Button size="sm" onClick={() => recompute.mutate()} loading={recompute.isPending}>
                     Compute now

@@ -88,14 +88,26 @@ export async function recomputeBurnout(departmentId?: string) {
 
 /** Reads stored scores, enriching each with its top factors and a suggested action. */
 export async function readBurnout(departmentId?: string, userId?: string): Promise<BurnoutScoreDTO[]> {
-  const weekStart = weekStartOf(new Date());
+  const scope = {
+    ...(userId ? { userId } : {}),
+    ...(departmentId ? { user: { departmentId } } : {}),
+  };
+
+  // Prefer the current week, but fall back to the most recent computed week.
+  // Scores are keyed by week, so pinning the read to *this* week blanks the
+  // whole page the moment the week rolls over — which for seeded demo data
+  // means every Monday. Showing the last real scores (labelled with their week)
+  // is both more useful and safe to demo on any date.
+  const latest = await prisma.burnoutScore.findFirst({
+    where: { ...scope, weekStart: { lte: weekStartOf(new Date()) } },
+    orderBy: { weekStart: 'desc' },
+    select: { weekStart: true },
+  });
+  if (!latest) return [];
+  const weekStart = latest.weekStart;
 
   const rows = await prisma.burnoutScore.findMany({
-    where: {
-      weekStart,
-      ...(userId ? { userId } : {}),
-      ...(departmentId ? { user: { departmentId } } : {}),
-    },
+    where: { weekStart, ...scope },
     include: {
       user: { select: { id: true, name: true, avatarSeed: true, designation: true } },
     },

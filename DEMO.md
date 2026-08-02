@@ -30,6 +30,27 @@ Switching roles: avatar menu (top right) → **Sign out** → click the next chi
 
 ---
 
+## −1:10 — Opening beat: Saarthi introduces himself
+
+Sign in as **Rajesh Iyer** (Admin). After a beat, a 3D robot waves and offers a
+2-minute tour.
+
+- Press **Start 2-min tour**. The spotlight lands on the org KPIs and Saarthi
+  points at them from the card corner.
+- Step through 2–3 steps. On the card, tap **हि** — the whole tour switches to
+  Hindi *at the same step*.
+- Press **Skip tour**, or keep going: the tour walks itself across pages to the
+  Fraud Center and makes you open a real alert before it will continue.
+
+> "The feasibility slide lists *initial user training* as our biggest adoption
+> risk. This is our answer: the manual is the product. Every role gets its own
+> 2-minute tour, in Hindi or English, and the steps that matter make you actually
+> do the thing rather than read about it."
+
+The help button stays in the corner — **Restart tour** any time.
+
+---
+
 ## −0:40 — Optional opener: a new joinee registers
 
 Skip this beat if you are tight on time; the main script stands alone.
@@ -218,6 +239,7 @@ Finish on **Org Overview**, then click **हिंदी** in the top bar.
 
 | Symptom | Fix |
 |---|---|
+| Saarthi's welcome modal does not appear | It shows once per role. Clear it with `localStorage.clear()` in the console, or use **Restart tour** from the corner button. |
 | Signup says "too many attempts" | 5 successful registrations per hour per IP. Restart the API to clear it, or raise `SIGNUP_RATE_LIMIT_PER_HOUR`. Failed validations do not count. |
 | No OTP visible | `MAIL_MODE=console` (the default) prints a boxed code in the API terminal and shows a DEV chip in the UI. |
 | Port 4000 in use | Another server is running. `lsof -ti:4000 \| xargs kill`, or set `PORT` in `apps/api/.env`. |

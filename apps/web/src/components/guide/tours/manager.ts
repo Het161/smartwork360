@@ -45,6 +45,7 @@ const STEPS: StepDef[] = [
     target: 'burnoutList',
     side: 'left',
     pose: 'point-right',
+    nextRoute: '/m/board',
     en: {
       title: 'Who is overloaded',
       body: 'Each person gets a score and a suggested action. Worth checking once a week.',
@@ -59,7 +60,6 @@ const STEPS: StepDef[] = [
     side: 'top',
     pose: 'point-right',
     action: TOUR_EVENTS.taskMoved,
-    nextRoute: '/m/board',
     prevRoute: '/m/dashboard',
     en: {
       title: 'Move a card',
@@ -74,6 +74,7 @@ const STEPS: StepDef[] = [
     target: 'newTaskBtn',
     side: 'bottom-left',
     pose: 'point-right',
+    nextRoute: '/m/reviews',
     en: {
       title: 'Assign work fairly',
       body: "When you pick a person, you see how much they're already carrying.",
@@ -87,7 +88,6 @@ const STEPS: StepDef[] = [
     target: 'reviewQueue',
     side: 'top',
     pose: 'point-left',
-    nextRoute: '/m/reviews',
     prevRoute: '/m/board',
     en: {
       title: 'Approve or send back',

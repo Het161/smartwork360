@@ -133,3 +133,18 @@ Every non-obvious engineering decision, with one line of reasoning. Newest phase
 | F.13 | Email templates are table-based with inline styles | The modern CSS used everywhere else in this project is exactly what Outlook does not support. |
 | F.14 | Real SMTP credentials live in `apps/api/.env` (gitignored); `.env.example` carries placeholders | Verified: `git check-ignore` confirms the file is ignored and zero `.env` files are tracked. |
 | F.15 | Department loading is an explicit `loading \| ready \| error` state with a retry | With the API unreachable, step 2 previously rendered an empty grid and the only clue was a small banner — the user reads that as "the Continue button is broken", not "the server is down". Step 1 now warns *before* they walk into it, and both steps name the exact URL that failed. |
+
+## Feature — Saarthi, the in-app guide
+
+| # | Decision | Reasoning |
+|---|---|---|
+| S.1 | `@react-three/fiber` v8 / `drei` v9, not the current majors | v9/v10 require React 19; this app is on React 18.3. Pinning the older line was the only compatible choice. |
+| S.2 | `three` upgraded to 0.185 to match `@types/three` | The reverse (pinning types down to 0.169) lost to npm hoisting even with an override. R3F v8 supports `three >=0.133`, so moving the library up was the safe direction. |
+| S.3 | The mascot is 100% procedural Three.js primitives | No GLB, no HDRI, no `Environment`, no CDN. The project's offline rule applies to delight as much as to data, and it keeps the asset cost at zero. |
+| S.4 | `frameloop` switches to `never` when the tab is hidden | Otherwise the canvas keeps animating forever behind whatever the user switched to, for nothing. |
+| S.5 | Step metadata (pose, action event, role) lives in a side registry | NextStep's `Step` type has no room for custom fields, and reading custom props back off a rendered `content` ReactNode is fragile. |
+| S.6 | **Bug found in review:** `nextRoute` was on the wrong step | NextStep navigates when *leaving* a step, so the route belonged on the step *before* the one that needs the new page. Every cross-page hop was off by one and simply never navigated — caught by a browser test asserting `page.url`, not by types. |
+| S.7 | Added a sixth event, `sw360:task-opened`, beyond the five specified | The Employee tour's next target lives *inside* the task drawer and does not exist until it opens. Without this the step could only be advanced by a Next button the spec says to hide. |
+| S.8 | The language toggle is duplicated inside the tour card | The tour overlay deliberately blocks clicks outside the spotlight, which made the topbar toggle unreachable — so "switch language mid-tour" was impossible until the control moved into the card. |
+| S.9 | Only the first row of a table carries `data-tour` | Every row matching would make the spotlight ambiguous; the tour should point at one thing. |
+| S.10 | The help button pulses for at most three sessions | A permanently pulsing help button is noise. Three sessions is enough to be noticed, then it goes quiet. |

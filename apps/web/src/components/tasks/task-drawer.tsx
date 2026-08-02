@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TaskDTO } from '@smartwork/shared';
 import { canTransition } from '@smartwork/shared';
@@ -71,6 +71,12 @@ export function TaskDrawer({
     onSuccess: invalidate,
     onError: (e) => setError(e instanceof Error ? e.message : 'Could not change the status'),
   });
+
+  // Announce a genuinely-open drawer (data loaded), so a guided tour can wait for
+  // it rather than for the click that may still be fetching.
+  useEffect(() => {
+    if (open && task) emitTourEvent(TOUR_EVENTS.taskOpened, { id: task.id });
+  }, [open, task]);
 
   const isMine = task?.assigneeId === user?.id;
   const canStart = task && isMine && canTransition(task.status, 'IN_PROGRESS');

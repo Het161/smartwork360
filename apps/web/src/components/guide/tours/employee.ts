@@ -19,6 +19,7 @@ const STEPS: StepDef[] = [
     target: 'myKpis',
     side: 'bottom',
     pose: 'point-right',
+    nextRoute: '/e/tasks',
     en: {
       title: 'What needs you today',
       body: 'Work assigned to you, what is due today, and how you are doing this month.',
@@ -32,7 +33,9 @@ const STEPS: StepDef[] = [
     target: 'taskRow',
     side: 'bottom',
     pose: 'point-left',
-    nextRoute: '/e/tasks',
+    // Opening a task is what makes the NEXT step's target (the progress panel
+    // inside the drawer) exist at all, so this step waits for the real click.
+    action: TOUR_EVENTS.taskOpened,
     prevRoute: '/e/dashboard',
     en: {
       title: 'Open any task',
@@ -48,6 +51,7 @@ const STEPS: StepDef[] = [
     side: 'left',
     pose: 'point-right',
     action: TOUR_EVENTS.progressAdded,
+    nextRoute: '/e/assistant',
     en: {
       title: 'Report your progress',
       body: 'Slide the bar, write one line, and submit. It is sealed into the record instantly.',
@@ -62,7 +66,7 @@ const STEPS: StepDef[] = [
     side: 'top',
     pose: 'point-left',
     action: TOUR_EVENTS.assistantReplied,
-    nextRoute: '/e/assistant',
+    nextRoute: '/e/performance',
     prevRoute: '/e/tasks',
     en: {
       title: 'Just ask me',
@@ -77,7 +81,6 @@ const STEPS: StepDef[] = [
     target: 'perfTrend',
     side: 'top',
     pose: 'point-right',
-    nextRoute: '/e/performance',
     prevRoute: '/e/assistant',
     en: {
       title: 'Your record',

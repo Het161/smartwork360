@@ -32,6 +32,9 @@ const STEPS: StepDef[] = [
     target: 'deptTable',
     side: 'top',
     pose: 'point-left',
+    // nextRoute fires when LEAVING this step, so it belongs on the step before
+    // the one that needs the new page.
+    nextRoute: '/a/fraud',
     en: {
       title: 'Which department needs you',
       body: 'Click the SLA % heading to sort. The lowest one needs attention first.',
@@ -45,7 +48,6 @@ const STEPS: StepDef[] = [
     target: 'fraudAlerts',
     side: 'top',
     pose: 'point-right',
-    nextRoute: '/a/fraud',
     prevRoute: '/a/overview',
     en: {
       title: 'The AI watches for misuse',
@@ -61,6 +63,7 @@ const STEPS: StepDef[] = [
     side: 'bottom',
     pose: 'point-left',
     action: TOUR_EVENTS.alertOpened,
+    nextRoute: '/a/audit',
     en: {
       title: 'Open the top alert',
       body: 'Click it to see the evidence — the exact records and why it was flagged.',
@@ -75,7 +78,7 @@ const STEPS: StepDef[] = [
     side: 'bottom',
     pose: 'point-right',
     action: TOUR_EVENTS.chainVerified,
-    nextRoute: '/a/audit',
+    nextRoute: '/a/settings',
     prevRoute: '/a/fraud',
     en: {
       title: 'Prove nothing was changed',
@@ -90,7 +93,6 @@ const STEPS: StepDef[] = [
     target: 'slaEditor',
     side: 'right',
     pose: 'point-left',
-    nextRoute: '/a/settings',
     prevRoute: '/a/audit',
     en: {
       title: 'Set the deadline rules',

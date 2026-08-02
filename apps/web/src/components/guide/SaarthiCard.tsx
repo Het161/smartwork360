@@ -47,7 +47,7 @@ export function SaarthiCard({
   skipTour,
   arrow,
 }: CardComponentProps) {
-  const { lang } = useI18n();
+  const { lang, setLang } = useI18n();
   const reduced = useReducedMotion();
   const { currentTour } = useNextStep();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -147,8 +147,27 @@ export function SaarthiCard({
           <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
             {t.step} {currentStep + 1} {t.of} {totalSteps}
           </span>
-          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary">
-            {lang === 'hi' ? ROLE_LABEL[role].hi : ROLE_LABEL[role].en}
+          <span className="flex items-center gap-1.5">
+            <span className="flex items-center rounded-full border border-borderx p-0.5">
+              {(['en', 'hi'] as const).map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => setLang(code)}
+                  aria-pressed={lang === code}
+                  aria-label={code === 'en' ? 'English' : 'हिंदी'}
+                  className={cn(
+                    'rounded-full px-1.5 py-0.5 text-[9px] font-semibold transition-colors',
+                    lang === code ? 'bg-primary text-white' : 'text-slate-500 hover:bg-slate-100',
+                  )}
+                >
+                  {code === 'en' ? 'EN' : 'हि'}
+                </button>
+              ))}
+            </span>
+            <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary">
+              {lang === 'hi' ? ROLE_LABEL[role].hi : ROLE_LABEL[role].en}
+            </span>
           </span>
         </div>
 

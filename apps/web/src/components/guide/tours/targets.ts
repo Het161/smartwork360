@@ -57,6 +57,9 @@ export function tourSelector(key: TourTargetKey): string {
  */
 export const TOUR_EVENTS = {
   taskMoved: 'sw360:task-moved',
+  // Not in the original event list, but the Employee tour needs it: the next
+  // step's target lives inside the task drawer and does not exist until it opens.
+  taskOpened: 'sw360:task-opened',
   alertOpened: 'sw360:alert-opened',
   chainVerified: 'sw360:chain-verified',
   progressAdded: 'sw360:progress-added',
