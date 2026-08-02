@@ -30,6 +30,36 @@ Switching roles: avatar menu (top right) → **Sign out** → click the next chi
 
 ---
 
+## −0:40 — Optional opener: a new joinee registers
+
+Skip this beat if you are tight on time; the main script stands alone.
+
+From the login screen click **Register for an account**.
+
+- **Step 1** — type name, designation, `anita.rao@gov.in`. The green tick pops on a
+  valid government domain; try `@gmail.com` first to show the red cross and the
+  refusal. Password meter fills as you type.
+- **Step 2** — department cards animate in; pick one, the saffron check badge pops.
+- **Step 3** — the envelope opens and a paper plane carries the code away. In
+  console mode an amber **DEV** chip shows the OTP; on a second screen show the
+  terminal box, or the Ethereal inbox if the venue wifi is good.
+- Type one wrong digit first: the boxes shake and say *"4 attempts left"*. Then
+  enter the real code — boxes turn green left to right.
+- **Step 4** — checkmark draws, tricolour confetti fires once.
+
+> "Self-registration can only ever create an Employee. The server sets the role —
+> it is not taken from the request."
+
+Now switch to Admin (**Departments & Users → Pending approvals**, the tab carries a
+count badge), press **Approve**: the row collapses away, a welcome email goes out,
+and a `USER_APPROVED` block lands in the audit chain. Sign in as the new employee to
+close the loop.
+
+> "Three new block types — USER_REGISTERED, EMAIL_VERIFIED, USER_APPROVED — and the
+> chain still verifies. Onboarding is audited like everything else."
+
+---
+
 ## 0:00 — Employee: the daily view
 
 Login chip → **Kavita Joshi** (Section Officer, Revenue).
@@ -188,6 +218,8 @@ Finish on **Org Overview**, then click **हिंदी** in the top bar.
 
 | Symptom | Fix |
 |---|---|
+| Signup says "too many attempts" | 5 successful registrations per hour per IP. Restart the API to clear it, or raise `SIGNUP_RATE_LIMIT_PER_HOUR`. Failed validations do not count. |
+| No OTP visible | `MAIL_MODE=console` (the default) prints a boxed code in the API terminal and shows a DEV chip in the UI. |
 | Port 4000 in use | Another server is running. `lsof -ti:4000 \| xargs kill`, or set `PORT` in `apps/api/.env`. |
 | Dashboards empty | `npm run seed`. |
 | Chain already red at start | Someone ran the tamper script. `npm run demo:reset`. |

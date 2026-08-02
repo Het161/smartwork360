@@ -15,6 +15,47 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
+/* ---------------------------------------------------------------- signup */
+
+/**
+ * Self-registration.
+ *
+ * Note there is no `role` field, deliberately. Self-signup can only ever produce
+ * an EMPLOYEE; the server sets the role. Accepting a role here — even validated —
+ * would put privilege escalation one crafted request away.
+ */
+export const signupSchema = z
+  .object({
+    name: z.string().min(2, 'Enter your full name').max(120),
+    email: z.string().email('Enter a valid email address').toLowerCase(),
+    designation: z.string().min(2, 'Enter your designation').max(120),
+    departmentId: z.string().min(1, 'Select your department'),
+    password: z
+      .string()
+      .min(8, 'Use at least 8 characters')
+      .max(128)
+      .regex(/[a-z]/, 'Include a lowercase letter')
+      .regex(/[A-Z]/, 'Include an uppercase letter')
+      .regex(/[0-9]/, 'Include a number'),
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+export type SignupInput = z.infer<typeof signupSchema>;
+
+export const verifyOtpSchema = z.object({
+  email: z.string().email().toLowerCase(),
+  code: z.string().regex(/^\d{6}$/, 'Enter the 6-digit code'),
+});
+export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
+
+export const resendOtpSchema = z.object({
+  email: z.string().email().toLowerCase(),
+});
+export type ResendOtpInput = z.infer<typeof resendOtpSchema>;
+
 export const parichayVerifySchema = z.object({
   userId: z.string().min(3, 'Enter your Parichay user ID (your @gov.in email)'),
   otp: z.string().length(6, 'OTP must be 6 digits'),

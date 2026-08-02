@@ -9,6 +9,7 @@ import type {
   KpiSummaryDTO,
   NotificationDTO,
   Paginated,
+  SignupResultDTO,
   SentimentTeamDTO,
   SlaAnalyticsDTO,
   TaskDTO,
@@ -148,6 +149,39 @@ export const api = {
       auth: false,
     }),
   me: () => request<{ user: UserDTO; via: string }>('/auth/me'),
+
+  /* signup */
+  signupDepartments: () =>
+    request<{ items: DepartmentDTO[]; allowedDomains: string[] }>('/auth/signup/departments', {
+      auth: false,
+    }),
+  signup: (body: {
+    name: string;
+    email: string;
+    designation: string;
+    departmentId: string;
+    password: string;
+    confirmPassword: string;
+  }) =>
+    request<SignupResultDTO & { maskedEmail: string }>('/auth/signup', {
+      method: 'POST',
+      body,
+      auth: false,
+    }),
+  verifyOtp: (email: string, code: string) =>
+    request<{ alreadyVerified: boolean; status: string; attemptsLeft: number }>(
+      '/auth/signup/verify-otp',
+      { method: 'POST', body: { email, code }, auth: false },
+    ),
+  resendOtp: (email: string) =>
+    request<SignupResultDTO & { maskedEmail: string }>('/auth/signup/resend-otp', {
+      method: 'POST',
+      body: { email },
+      auth: false,
+    }),
+  pendingUsers: () => request<{ items: UserDTO[]; total: number }>('/users/pending/list'),
+  approveUser: (id: string) =>
+    request<{ user: UserDTO; previewUrl?: string }>(`/users/${id}/approve`, { method: 'PATCH' }),
   logout: () => request<{ ok: boolean }>('/auth/logout', { method: 'POST' }),
 
   /* departments */

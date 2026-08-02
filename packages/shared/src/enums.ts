@@ -7,6 +7,14 @@
 export const ROLES = ['ADMIN', 'MANAGER', 'EMPLOYEE'] as const;
 export type Role = (typeof ROLES)[number];
 
+export const USER_STATUSES = [
+  'PENDING_VERIFICATION',
+  'PENDING_APPROVAL',
+  'ACTIVE',
+  'DISABLED',
+] as const;
+export type UserStatus = (typeof USER_STATUSES)[number];
+
 export const TASK_STATUSES = ['PENDING', 'IN_PROGRESS', 'UNDER_REVIEW', 'COMPLETED'] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
@@ -59,6 +67,9 @@ export const AUDIT_ACTIONS = [
   'TASK_REJECTED',
   'USER_CREATED',
   'USER_UPDATED',
+  'USER_REGISTERED',
+  'EMAIL_VERIFIED',
+  'USER_APPROVED',
   'DEPARTMENT_CREATED',
   'DEPARTMENT_UPDATED',
   'SLA_POLICY_UPDATED',

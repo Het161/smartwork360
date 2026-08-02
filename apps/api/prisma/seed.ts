@@ -204,6 +204,9 @@ async function main() {
         designation: spec.designation,
         departmentId: dept.id,
         avatarSeed: avatarSeedFor(spec.name),
+        // Seeded staff are established employees, not new registrations.
+        status: 'ACTIVE',
+        emailVerified: true,
         createdAt: daysAgo(createdDaysAgo, 9),
       },
     });
@@ -1008,6 +1011,7 @@ export function riskFrom(score: number): 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL
 
 /** Deletes in FK-safe order. Only touches SMARTWORK 360 tables. */
 async function wipe() {
+  await prisma.emailOtp.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.sentimentRecord.deleteMany();
   await prisma.burnoutScore.deleteMany();

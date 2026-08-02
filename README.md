@@ -219,6 +219,46 @@ returns the capability list rather than a plausible-sounding guess.
 
 ---
 
+## Onboarding: registration, email OTP, approval
+
+A new employee registers themselves, verifies by email, and waits for an
+administrator — the flow a real department would actually use.
+
+```
+/signup  →  OTP emailed  →  PENDING_APPROVAL  →  admin approves  →  welcome email  →  login works
+```
+
+**Security posture**
+
+- Self-registration can only ever create an **EMPLOYEE**. The role is set by the
+  server and is not read from the request body — verified by a test that posts
+  `role: "ADMIN"` and gets an employee back.
+- Restricted to configured government domains (`gov.in`, `nic.in` by default).
+- OTPs are stored as **bcrypt hashes**, never plaintext: a database dump does not
+  hand anyone a working code.
+- 10-minute expiry · 5 wrong attempts then the code is invalidated · 30-second
+  resend cooldown · previous codes invalidated on resend. All enforced server-side.
+- Rate limited to 5 **successful** registrations per hour per IP. Failed
+  validations do not count — the limit exists to stop mail-bombing, not to lock out
+  someone who mistyped their password.
+- `USER_REGISTERED`, `EMAIL_VERIFIED` and `USER_APPROVED` are written to the audit
+  chain, which still verifies intact after the whole flow.
+
+**Mail modes** (`MAIL_MODE` in `apps/api/.env`)
+
+| Mode | Behaviour |
+|---|---|
+| `console` *(default)* | Prints a boxed OTP to the API terminal, and the UI shows a labelled **DEV** chip. No network — works on a venue with no wifi. |
+| `ethereal` | Creates a throwaway inbox and logs a preview URL, so you can show the real branded email rendered. |
+| `smtp` | A real provider. Gmail needs an [App Password](https://myaccount.google.com/apppasswords), not the account password. |
+
+Delivery failure is never fatal: registration still succeeds and the user can
+resend. Losing an email must not lose an account.
+
+The signup UI is animated (Framer Motion) but every animation is gated on
+`prefers-reduced-motion`, and the entire four-step flow is completable by keyboard
+alone — both verified in the browser.
+
 ## Claimed metrics, and where to check them
 
 | Claim | Measured | Where |
@@ -239,7 +279,7 @@ click **Authorize**, paste the `accessToken`.
 
 | Tag | Ops | Notable |
 |---|---|---|
-| Auth | 5 | Password, refresh, and the labelled Parichay sandbox |
+| Auth | 9 | Password, refresh, Parichay sandbox, signup + OTP verify/resend |
 | Tasks | 9 | Lifecycle with enforced transitions and maker-checker separation |
 | Users | 5 | Directory plus per-user performance |
 | Departments | 5 | CRUD plus SLA policy editing |
@@ -303,8 +343,10 @@ Stated so nobody has to guess what is real:
 
 - **No real Parichay/NIC integration.** The screen is labelled Sandbox everywhere.
 - **No blockchain transactions.** Merkle roots are computed; anchoring is planned.
-- No Flutter app, no cloud file uploads, no email, no WebSockets (dashboards poll
-  every 30s), no multi-tenancy, no dark mode.
+- No Flutter app, no cloud file uploads, no WebSockets (dashboards poll every 30s),
+  no multi-tenancy, no dark mode.
+- Email **is** implemented (registration OTP and welcome mail), but defaults to
+  `console` mode so nothing leaves the machine unless you configure SMTP.
 
 ## Environment notes
 

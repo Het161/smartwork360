@@ -1,7 +1,27 @@
 import { Router } from 'express';
-import { loginSchema, parichayVerifySchema, type LoginInput, type ParichayVerifyInput } from '@smartwork/shared';
+import {
+  loginSchema,
+  parichayVerifySchema,
+  resendOtpSchema,
+  signupSchema,
+  verifyOtpSchema,
+  type LoginInput,
+  type ParichayVerifyInput,
+  type ResendOtpInput,
+  type SignupInput,
+  type VerifyOtpInput,
+} from '@smartwork/shared';
+import { allowedEmailDomains, env } from '../../config/env';
+import { rateLimit } from '../../middleware/rate-limit';
+import { HttpError } from '../../middleware/errors';
+import {
+  maskEmail,
+  registerEmployee,
+  resendOtp,
+  signInBlockReason,
+  verifyOtp,
+} from './signup.service';
 import { prisma } from '../../db/prisma';
-import { env } from '../../config/env';
 import { verifyPassword } from '../../auth/password';
 import {
   REFRESH_COOKIE,
@@ -54,6 +74,19 @@ authRouter.post(
       throw unauthorized('Incorrect email or password');
     }
     if (!user.active) throw unauthorized('This account has been deactivated');
+
+    // Credentials are correct but onboarding is incomplete. This is deliberately a
+    // 403 with a specific code, not a 401: the client needs to know whether to send
+    // the user back to the OTP step or simply tell them to wait. The check runs
+    // AFTER the password check so it cannot be used to enumerate accounts.
+    const blocked = signInBlockReason(user.status);
+    if (blocked) {
+      throw new HttpError(403, blocked.message, blocked.code, {
+        email: user.email,
+        maskedEmail: maskEmail(user.email),
+        status: user.status,
+      });
+    }
 
     res.cookie(REFRESH_COOKIE, signRefreshToken(user.id), refreshCookieOptions);
     res.json({
@@ -108,6 +141,15 @@ authRouter.post(
 
     if (!user) throw unauthorized(`No Parichay-linked account found for ${email}`);
     if (!user.active) throw unauthorized('This account has been deactivated');
+
+    const ssoBlocked = signInBlockReason(user.status);
+    if (ssoBlocked) {
+      throw new HttpError(403, ssoBlocked.message, ssoBlocked.code, {
+        email: user.email,
+        maskedEmail: maskEmail(user.email),
+        status: user.status,
+      });
+    }
 
     res.cookie(REFRESH_COOKIE, signRefreshToken(user.id), refreshCookieOptions);
     res.json({
@@ -195,5 +237,153 @@ authRouter.get(
     const user = await prisma.user.findUnique({ where: { id: me.sub }, include: userInclude });
     if (!user) throw unauthorized('Account no longer exists');
     res.json({ user: toUserDTO(user), via: me.via ?? 'password' });
+  }),
+);
+
+/* ------------------------------------------------------------- signup flow */
+
+// Registration and resend are the two endpoints that cost real money (email) and
+// can be used to spam an inbox, so both are rate limited by IP.
+const signupLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  max: env.SIGNUP_RATE_LIMIT_PER_HOUR,
+  // Only successful registrations/resends spend the budget — a validation error
+  // sends no email, so it must not count against the user.
+  countOnlySuccess: true,
+});
+
+/**
+ * @openapi
+ * /auth/signup:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Self-register as an employee (sends an email OTP)
+ *     description: >
+ *       Creates a PENDING_VERIFICATION account and emails a 6-digit code. The role
+ *       is forced to EMPLOYEE server-side — self-registration can never create a
+ *       manager or administrator. Restricted to the configured government domains.
+ *       Rate limited per IP.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, designation, departmentId, password, confirmPassword]
+ *             properties:
+ *               name: { type: string, example: "Anita Rao" }
+ *               email: { type: string, example: "anita.rao@gov.in" }
+ *               designation: { type: string, example: "Junior Clerk" }
+ *               departmentId: { type: string }
+ *               password: { type: string, example: "Sunrise@2026" }
+ *               confirmPassword: { type: string, example: "Sunrise@2026" }
+ *     responses:
+ *       201:
+ *         description: Registered — OTP sent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 email: { type: string }
+ *                 status: { type: string, example: PENDING_VERIFICATION }
+ *                 expiresInSeconds: { type: integer, example: 600 }
+ *                 devOtp: { type: string, description: "Development + console mail mode only" }
+ *                 previewUrl: { type: string, description: "Ethereal preview link" }
+ *       400: { description: Disallowed email domain or invalid department }
+ *       409: { description: An active account already uses this email }
+ *       429: { description: Rate limited }
+ */
+authRouter.post(
+  '/signup',
+  signupLimiter,
+  validateBody(signupSchema),
+  asyncHandler(async (req, res) => {
+    const result = await registerEmployee(body<SignupInput>(req));
+    res.status(201).json({ ...result, maskedEmail: maskEmail(result.email) });
+  }),
+);
+
+/**
+ * @openapi
+ * /auth/signup/verify-otp:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Verify the emailed code
+ *     description: >
+ *       On success the account moves to PENDING_APPROVAL and every administrator is
+ *       notified. Codes expire after 10 minutes and lock after 5 wrong attempts.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, code]
+ *             properties:
+ *               email: { type: string, example: "anita.rao@gov.in" }
+ *               code: { type: string, example: "482913" }
+ *     responses:
+ *       200: { description: Verified — awaiting administrator approval }
+ *       400: { description: Wrong, expired or locked code (details.attemptsLeft) }
+ */
+authRouter.post(
+  '/signup/verify-otp',
+  validateBody(verifyOtpSchema),
+  asyncHandler(async (req, res) => {
+    const { email, code } = body<VerifyOtpInput>(req);
+    res.json(await verifyOtp(email, code));
+  }),
+);
+
+/**
+ * @openapi
+ * /auth/signup/resend-otp:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Send a fresh code, invalidating the previous one
+ *     description: 30-second cooldown enforced server-side; 429 carries `details.retryAfter`.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, example: "anita.rao@gov.in" }
+ *     responses:
+ *       200: { description: New code sent }
+ *       429: { description: Cooldown still active }
+ */
+authRouter.post(
+  '/signup/resend-otp',
+  signupLimiter,
+  validateBody(resendOtpSchema),
+  asyncHandler(async (req, res) => {
+    const { email } = body<ResendOtpInput>(req);
+    const result = await resendOtp(email);
+    res.json({ ...result, maskedEmail: maskEmail(result.email) });
+  }),
+);
+
+/**
+ * @openapi
+ * /auth/signup/departments:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Departments available on the registration form
+ *     description: Public — the signup form needs it before any token exists.
+ *     responses:
+ *       200: { description: Departments }
+ */
+authRouter.get(
+  '/signup/departments',
+  asyncHandler(async (_req, res) => {
+    const departments = await prisma.department.findMany({
+      orderBy: { code: 'asc' },
+      select: { id: true, code: true, name: true, nameHi: true },
+    });
+    res.json({ items: departments, allowedDomains: allowedEmailDomains });
   }),
 );

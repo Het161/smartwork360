@@ -26,6 +26,20 @@ const envSchema = z.object({
     .default('true')
     .transform((v) => v !== 'false'),
   LOG_LEVEL: z.string().default('info'),
+
+  /* ------------------------------------------------------------------ mail */
+  // console (default) never touches the network — the demo works offline.
+  MAIL_MODE: z.enum(['console', 'ethereal', 'smtp']).default('console'),
+  MAIL_FROM: z.string().default('SMARTWORK 360 <no-reply@smartwork360.gov.in>'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+
+  /* ------------------------------------------------------------- onboarding */
+  ALLOWED_EMAIL_DOMAINS: z.string().default('gov.in,nic.in'),
+  APP_BASE_URL: z.string().default('http://localhost:3000'),
+  SIGNUP_RATE_LIMIT_PER_HOUR: z.coerce.number().int().default(5),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -46,3 +60,8 @@ export const corsOrigins = env.CORS_ORIGIN.split(',')
   .filter(Boolean);
 
 export const isProd = env.NODE_ENV === 'production';
+
+/** Domains permitted to self-register, lower-cased and stripped of any leading '@'. */
+export const allowedEmailDomains = env.ALLOWED_EMAIL_DOMAINS.split(',')
+  .map((d) => d.trim().toLowerCase().replace(/^@/, ''))
+  .filter(Boolean);

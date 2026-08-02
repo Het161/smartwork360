@@ -1,5 +1,6 @@
 import type {
   AlertStatus,
+  UserStatus,
   FraudType,
   Priority,
   RiskLevel,
@@ -29,7 +30,20 @@ export interface UserDTO {
   department?: DepartmentDTO;
   avatarSeed: string;
   active: boolean;
+  status: UserStatus;
+  emailVerified: boolean;
+  approvedAt?: string | null;
   createdAt: string;
+}
+
+export interface SignupResultDTO {
+  email: string;
+  status: UserStatus;
+  /** Present only in development with MAIL_MODE=console — never in production. */
+  devOtp?: string;
+  /** Ethereal preview URL when MAIL_MODE=ethereal. */
+  previewUrl?: string;
+  expiresInSeconds: number;
 }
 
 export interface TaskUpdateDTO {

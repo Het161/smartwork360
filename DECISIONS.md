@@ -113,3 +113,22 @@ Every non-obvious engineering decision, with one line of reasoning. Newest phase
 | 6.6 | The Fraud Center explains *why* precision is 92% and not 100% | A round number invites suspicion. Stating that one alert is a labelled false positive, and that runtime alerts are excluded from the denominator, turns the statistic into evidence of rigour. |
 | 6.7 | The tampered state renders a "What just happened" panel | The demo's whole point is that the edited row looks normal in the database. Saying so on screen means the audience does not have to take the presenter's word for it. |
 | 6.8 | README leads with the measured numbers, including where a model *lost* | Reporting that DistilBERT scored 65% and that the lexicon beat it is more credible than quoting SST-2's published 91.3%, which is about movie reviews. |
+
+## Feature — Self-registration with email OTP
+
+| # | Decision | Reasoning |
+|---|---|---|
+| F.1 | `signupSchema` has **no** `role` field at all | Accepting a role — even a validated one — puts privilege escalation one crafted request away. The server sets `EMPLOYEE`. Verified by a test that posts `role: "ADMIN"` and gets an employee back. |
+| F.2 | OTPs are stored as bcrypt hashes | A database dump must not hand an attacker a working verification code. The plaintext exists only in the email and in the process that generated it. |
+| F.3 | Codes come from `crypto.randomInt`, not `Math.random()` | It is a credential. A predictable PRNG makes the code guessable from a known seed. |
+| F.4 | `MAIL_MODE=console` is the default | The ground rule is that the demo cannot break offline, and mail is the one part of this feature that needs the network. Console mode prints a boxed OTP and the UI shows a labelled DEV chip. |
+| F.5 | `devOtp` is returned only when `NODE_ENV !== production` **and** mail mode is console | It is exposed only when nothing was actually delivered to an inbox the user could open — never when a real email exists. |
+| F.6 | A failed send does not fail the request | Registration succeeds and the user can resend. Losing an email must never lose an account. |
+| F.7 | The rate limiter counts **successful** requests only | Counting failures would lock a user out of registration for an hour because they mistyped their password five times. The budget exists to stop mail-bombing, so it should be spent on emails, not attempts. Found when my own API tests exhausted the quota with validation errors. |
+| F.8 | Blocked sign-ins return 403 with a specific code, checked **after** the password | The client needs to know whether to send the user back to the OTP step or just tell them to wait. Running the check after password verification keeps it useless for account enumeration. |
+| F.9 | A half-finished registration is resumable, not a conflict | Only accounts past verification return 409. An abandoned signup refreshes its details and gets a new code instead of becoming a permanently unusable email address. |
+| F.10 | Each step heading focuses **itself** on mount | Focusing from the parent on a `step` change does not work: with `AnimatePresence mode="wait"` the incoming heading has not mounted yet and the ref is null. Without this fix a keyboard user was dropped back to `<body>` after every transition — caught by the keyboard-only test, not by review. |
+| F.11 | Every animation is gated on `prefers-reduced-motion` | WCAG 2.1. Reduced mode keeps opacity crossfades (which still signal "something changed") and drops movement, the ambient orbs and the confetti. |
+| F.12 | The password meter labels score 0 as "Too short" rather than showing nothing | An empty label while the user is typing reads as a broken meter, not as "not good enough yet". |
+| F.13 | Email templates are table-based with inline styles | The modern CSS used everywhere else in this project is exactly what Outlook does not support. |
+| F.14 | Real SMTP credentials live in `apps/api/.env` (gitignored); `.env.example` carries placeholders | Verified: `git check-ignore` confirms the file is ignored and zero `.env` files are tracked. |

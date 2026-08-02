@@ -17,6 +17,16 @@ enum Role {
   EMPLOYEE
 }
 
+/// Onboarding lifecycle. Self-registration walks
+/// PENDING_VERIFICATION -> PENDING_APPROVAL -> ACTIVE.
+/// Accounts created by an Admin are ACTIVE immediately.
+enum UserStatus {
+  PENDING_VERIFICATION
+  PENDING_APPROVAL
+  ACTIVE
+  DISABLED
+}
+
 enum TaskStatus {
   PENDING
   IN_PROGRESS
@@ -87,7 +97,11 @@ model User {
   designation  String
   departmentId String
   avatarSeed   String
-  active       Boolean  @default(true)
+  active       Boolean    @default(true)
+  status       UserStatus @default(ACTIVE)
+  emailVerified Boolean   @default(false)
+  approvedById String?
+  approvedAt   DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
 
@@ -263,6 +277,25 @@ model SLAPolicy {
 
   @@unique([departmentId, priority])
   @@map("sla_policies")
+}
+
+/// One-time codes for email verification.
+///
+/// `codeHash` is a bcrypt hash — the plaintext code exists only in the email and
+/// in the process that generated it. A database dump must not hand an attacker a
+/// working verification code.
+model EmailOtp {
+  id         String    @id @default(cuid())
+  email      String
+  codeHash   String
+  purpose    String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email, purpose])
+  @@map("email_otps")
 }
 
 model Notification {

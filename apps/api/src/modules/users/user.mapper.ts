@@ -18,6 +18,9 @@ export function toUserDTO(user: UserWithDept): UserDTO {
     department: user.department,
     avatarSeed: user.avatarSeed,
     active: user.active,
+    status: user.status,
+    emailVerified: user.emailVerified,
+    approvedAt: user.approvedAt?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
   };
 }

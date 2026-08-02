@@ -39,3 +39,17 @@ export const NEUTRAL_BAND = 0.25;
 
 export const DEMO_PASSWORD = 'Demo@123';
 export const PARICHAY_SANDBOX_OTP = '123456';
+
+/* ------------------------------------------------------------ onboarding */
+
+/** OTP lifetime. Long enough to switch to an inbox, short enough to matter. */
+export const OTP_TTL_SECONDS = 10 * 60;
+
+/** Wrong guesses before the code is invalidated and a resend is forced. */
+export const OTP_MAX_ATTEMPTS = 5;
+
+/** Minimum wait between resend requests, enforced server-side. */
+export const OTP_RESEND_COOLDOWN_SECONDS = 30;
+
+/** Self-registration is restricted to government domains. */
+export const DEFAULT_ALLOWED_EMAIL_DOMAINS = ['gov.in', 'nic.in'];

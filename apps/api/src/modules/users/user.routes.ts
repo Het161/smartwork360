@@ -17,6 +17,7 @@ import { currentUser, requireAuth, requireRole } from '../../middleware/auth';
 import { body, query, validateBody, validateQuery } from '../../middleware/validate';
 import { assertCanAccessDepartment, userScope } from '../../middleware/scope';
 import { computeUserPerformance } from '../analytics/analytics.service';
+import { approveUser } from '../auth/signup.service';
 import { toUserDTO, userInclude } from './user.mapper';
 
 export const userRouter = Router();
@@ -264,5 +265,60 @@ userRouter.get(
     if (me.role === 'MANAGER') assertCanAccessDepartment(me, target.departmentId);
 
     res.json(await computeUserPerformance(target.id));
+  }),
+);
+
+/**
+ * @openapi
+ * /users/{id}/approve:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Approve a self-registered employee (audited, sends a welcome email)
+ *     description: >
+ *       Moves a PENDING_APPROVAL account to ACTIVE, writes a USER_APPROVED block to
+ *       the audit chain, notifies the user in-app and emails them. Rejected if the
+ *       user has not verified their email yet.
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string } }
+ *     responses:
+ *       200: { description: The activated user }
+ *       400: { description: Already active, or email not yet verified }
+ *       404: { description: Not found }
+ */
+userRouter.patch(
+  '/:id/approve',
+  requireRole('ADMIN'),
+  asyncHandler(async (req, res) => {
+    const me = currentUser(req);
+    const { user, previewUrl } = await approveUser(req.params.id, me.sub);
+    const full = await prisma.user.findUniqueOrThrow({
+      where: { id: user.id },
+      include: userInclude,
+    });
+    res.json({ user: toUserDTO(full), previewUrl });
+  }),
+);
+
+/**
+ * @openapi
+ * /users/pending/list:
+ *   get:
+ *     tags: [Users]
+ *     summary: Registrations awaiting administrator approval
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Users in PENDING_APPROVAL or PENDING_VERIFICATION }
+ */
+userRouter.get(
+  '/pending/list',
+  requireRole('ADMIN'),
+  asyncHandler(async (_req, res) => {
+    const users = await prisma.user.findMany({
+      where: { status: { in: ['PENDING_APPROVAL', 'PENDING_VERIFICATION'] } },
+      include: userInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ items: users.map(toUserDTO), total: users.length });
   }),
 );

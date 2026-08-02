@@ -4,7 +4,18 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DEMO_PASSWORD } from '@smartwork/shared';
-import { AlertCircle, ArrowRight, Building2, ShieldCheck, UserCog, Users } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowRight,
+  Building2,
+  Hourglass,
+  MailWarning,
+  ShieldCheck,
+  UserCog,
+  UserPlus,
+  Users,
+} from 'lucide-react';
+import { ApiError } from '@/lib/api';
 import { HOME_FOR, useAuth } from '@/lib/auth';
 import { useI18n } from '@/i18n/provider';
 import { Button } from '@/components/ui/button';
@@ -44,6 +55,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [blocked, setBlocked] = useState<{
+    code: string;
+    message: string;
+    maskedEmail?: string;
+  } | null>(null);
 
   // Already signed in (e.g. refreshed the tab) — go straight to the right home.
   useEffect(() => {
@@ -53,12 +69,20 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setBlocked(null);
     setSubmitting(true);
     try {
       const signedIn = await signIn(email.trim(), password);
       router.replace(HOME_FOR[signedIn.role]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.login.invalid);
+      // Onboarding-incomplete states get their own banner with a next action,
+      // rather than being flattened into "incorrect email or password".
+      if (err instanceof ApiError && (err.code === 'EMAIL_NOT_VERIFIED' || err.code === 'PENDING_APPROVAL')) {
+        const details = err.details as unknown as { maskedEmail?: string } | undefined;
+        setBlocked({ code: err.code, message: err.message, maskedEmail: details?.maskedEmail });
+      } else {
+        setError(err instanceof Error ? err.message : t.login.invalid);
+      }
       setSubmitting(false);
     }
   }
@@ -179,6 +203,42 @@ export default function LoginPage() {
               </p>
             ) : null}
 
+            {blocked?.code === 'EMAIL_NOT_VERIFIED' ? (
+              <div
+                role="alert"
+                className="rounded-btn border border-warning/40 bg-warning-soft px-3 py-2.5 text-sm text-warning"
+              >
+                <p className="flex items-start gap-2 font-medium">
+                  <MailWarning className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                  Verify your email to continue
+                </p>
+                <p className="mt-1 text-warning/90">
+                  We sent a code to {blocked.maskedEmail ?? email}. Finish verification to activate
+                  your registration.
+                </p>
+                <Link
+                  href={`/signup?step=verify&email=${encodeURIComponent(email.trim())}`}
+                  className="mt-2 inline-flex items-center gap-1 font-semibold underline"
+                >
+                  Enter the code
+                  <ArrowRight className="h-3 w-3" aria-hidden />
+                </Link>
+              </div>
+            ) : null}
+
+            {blocked?.code === 'PENDING_APPROVAL' ? (
+              <div
+                role="alert"
+                className="rounded-btn border border-info/30 bg-info-soft px-3 py-2.5 text-sm text-info"
+              >
+                <p className="flex items-start gap-2 font-medium">
+                  <Hourglass className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                  Awaiting administrator approval
+                </p>
+                <p className="mt-1 text-info/90">{blocked.message}</p>
+              </div>
+            ) : null}
+
             <Button type="submit" className="w-full" size="lg" loading={submitting}>
               {t.common.signIn}
               {!submitting ? <ArrowRight className="h-4 w-4" aria-hidden /> : null}
@@ -200,6 +260,17 @@ export default function LoginPage() {
             </Link>
           </Button>
           <p className="mt-2 text-center text-xs text-slate-500">{t.login.parichayNote}</p>
+
+          <p className="mt-5 text-center text-sm text-slate-600">
+            New employee?{' '}
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+            >
+              <UserPlus className="h-3.5 w-3.5" aria-hidden />
+              Register for an account
+            </Link>
+          </p>
 
           {/* Quick-login chips — judges should never have to type a password. */}
           <div className="mt-8 rounded-card border border-borderx bg-white p-4">
