@@ -30,6 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/input';
 import { SkeletonCard } from '@/components/ui/states';
 import { AlertTable } from '@/components/fraud/alert-table';
+import { emitTourEvent, TOUR_EVENTS } from '@/components/guide/tours/targets';
 import { AlertDrawer, ALERT_TYPE_LABEL } from '@/components/fraud/alert-drawer';
 import { RISK_COLOR, chartTheme } from '@/lib/charts';
 
@@ -332,7 +333,17 @@ export default function FraudCenterPage() {
             </div>
           }
         />
-        <AlertTable alerts={items} loading={alerts.isLoading} onSelect={setSelected} />
+        <div data-tour="fraud-alerts" className="scroll-mt-24">
+          <AlertTable
+            alerts={items}
+            loading={alerts.isLoading}
+            onSelect={(alert) => {
+              setSelected(alert);
+              // Lets a guided tour advance only once the drawer is really open.
+              emitTourEvent(TOUR_EVENTS.alertOpened, { id: alert.id });
+            }}
+          />
+        </div>
       </Card>
 
       <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">

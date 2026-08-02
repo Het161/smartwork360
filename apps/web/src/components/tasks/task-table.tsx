@@ -72,9 +72,10 @@ export function TaskTable({
           </tr>
         </thead>
         <tbody>
-          {tasks.map((task) => (
+          {tasks.map((task, rowIndex) => (
             <tr
               key={task.id}
+              {...(rowIndex === 0 ? { 'data-tour': 'task-row' } : {})}
               className={cn(
                 'border-b border-borderx last:border-0 hover:bg-slate-50',
                 task.isOverdue && 'bg-danger-soft/30',

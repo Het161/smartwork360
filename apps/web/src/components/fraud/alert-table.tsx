@@ -50,9 +50,10 @@ export function AlertTable({
           </tr>
         </thead>
         <tbody>
-          {alerts.map((alert) => (
+          {alerts.map((alert, rowIndex) => (
             <tr
               key={alert.id}
+              {...(rowIndex === 0 ? { 'data-tour': 'fraud-alert-row' } : {})}
               className={cn(
                 'border-b border-borderx last:border-0 hover:bg-slate-50',
                 alert.status === 'OPEN' && alert.severity === 'CRITICAL' && 'bg-danger-soft/25',

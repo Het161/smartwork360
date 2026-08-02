@@ -15,6 +15,7 @@ import { Avatar, PersonCell } from '../avatar';
 import { PriorityChip, SentimentChip, SlaChip, StatusChip } from '../chips';
 import { Skeleton } from '../ui/states';
 import { cn } from '@/lib/utils';
+import { emitTourEvent, TOUR_EVENTS } from '@/components/guide/tours/targets';
 
 export function TaskDrawer({
   taskId,
@@ -60,6 +61,7 @@ export function TaskDrawer({
       setNote('');
       setError(null);
       invalidate();
+      emitTourEvent(TOUR_EVENTS.progressAdded);
     },
     onError: (e) => setError(e instanceof Error ? e.message : 'Could not add the update'),
   });
@@ -214,7 +216,7 @@ export function TaskDrawer({
 
           {/* Add update */}
           {isMine && task.status !== 'COMPLETED' ? (
-            <section className="rounded-card border border-borderx p-3">
+            <section data-tour="add-progress" className="scroll-mt-24 rounded-card border border-borderx p-3">
               <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-800">
                 <MessageSquarePlus className="h-4 w-4 text-primary" aria-hidden />
                 {t.employee.addUpdate}

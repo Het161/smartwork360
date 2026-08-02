@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nProvider } from '@/i18n/provider';
 import { AuthProvider } from './auth';
+import { GuideProvider } from '@/components/guide/GuideProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -29,7 +30,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={client}>
       <I18nProvider>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {/* Saarthi sits inside auth + i18n: tours are role-scoped and bilingual. */}
+          <GuideProvider>{children}</GuideProvider>
+        </AuthProvider>
       </I18nProvider>
     </QueryClientProvider>
   );

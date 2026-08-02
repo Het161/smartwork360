@@ -62,7 +62,7 @@ export default function ManagerDashboard() {
         }
       />
 
-      <KpiGrid>
+      <KpiGrid className="scroll-mt-24" data-tour="team-kpis">
         <KpiCard
           label={t.kpi.totalTasks}
           value={kpis.data?.totalTasks ?? 0}
@@ -131,7 +131,7 @@ export default function ManagerDashboard() {
         </Card>
 
         {/* Morale gauge */}
-        <Card>
+        <Card data-tour="morale-gauge" className="scroll-mt-24">
           <CardHeader title={t.manager.morale} hint={t.manager.morale14d} />
           <CardBody className="flex flex-col items-center">
             {sentiment.isLoading ? (
@@ -173,7 +173,7 @@ export default function ManagerDashboard() {
         </Card>
 
         {/* Burnout risk top 3 */}
-        <Card>
+        <Card data-tour="burnout-list" className="scroll-mt-24">
           <CardHeader
             icon={<HeartPulse className="h-4 w-4 text-danger" aria-hidden />}
             title={t.manager.burnoutRisk}

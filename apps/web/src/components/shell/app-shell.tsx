@@ -7,6 +7,8 @@ import { ChevronRight, Loader2, X } from 'lucide-react';
 import { useRequireRole } from '@/lib/auth';
 import { useI18n } from '@/i18n/provider';
 import { Sidebar, NAV } from './sidebar';
+import { WelcomeModal } from '../guide/WelcomeModal';
+import { HelpLauncher } from '../guide/HelpLauncher';
 import { Topbar } from './topbar';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
@@ -38,6 +40,10 @@ export function AppShell({ role, children }: { role: Role; children: React.React
           {children}
         </main>
       </div>
+
+      {/* Saarthi — the in-app guide */}
+      <WelcomeModal />
+      <HelpLauncher />
     </div>
   );
 }

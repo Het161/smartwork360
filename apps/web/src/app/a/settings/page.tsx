@@ -86,7 +86,7 @@ export default function SettingsPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* SLA policy editor */}
-        <Card>
+        <Card data-tour="sla-editor" className="scroll-mt-24">
           <CardHeader
             icon={<Clock className="h-4 w-4 text-primary" aria-hidden />}
             title={t.admin.slaPolicies}

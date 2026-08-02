@@ -53,7 +53,7 @@ export default function ReviewsPage() {
         breadcrumbs={[{ label: t.nav.manager }, { label: t.nav.reviews }]}
       />
 
-      <Card>
+      <Card data-tour="review-queue" className="scroll-mt-24">
         {isLoading ? (
           <SkeletonCard rows={5} className="border-0 shadow-none" />
         ) : items.length === 0 ? (

@@ -59,6 +59,7 @@ export function Topbar({ onOpenNav }: { onOpenNav: () => void }) {
         <div className="ml-auto flex items-center gap-1.5">
           {/* Language toggle — an instant, no-reload demo moment. */}
           <div
+            data-tour="lang-toggle"
             className="flex items-center rounded-btn border border-borderx p-0.5"
             role="group"
             aria-label={t.common.language}

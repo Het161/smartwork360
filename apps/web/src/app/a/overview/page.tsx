@@ -153,7 +153,7 @@ export default function OrgOverviewPage() {
         breadcrumbs={[{ label: t.nav.admin }, { label: t.nav.orgOverview }]}
       />
 
-      <KpiGrid>
+      <KpiGrid className="scroll-mt-24" data-tour="org-kpis">
         <KpiCard
           label={t.kpi.totalTasks}
           value={kpis.data?.totalTasks ?? 0}
@@ -189,7 +189,7 @@ export default function OrgOverviewPage() {
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_300px]">
         {/* Department comparison */}
-        <Card>
+        <Card data-tour="dept-table" className="scroll-mt-24">
           <CardHeader
             icon={<Building2 className="h-4 w-4 text-primary" aria-hidden />}
             title={t.admin.deptComparison}

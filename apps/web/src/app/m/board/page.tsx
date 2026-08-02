@@ -36,6 +36,7 @@ import { EmptyState, SkeletonCard } from '@/components/ui/states';
 import { TaskDrawer } from '@/components/tasks/task-drawer';
 import { NewTaskModal } from '@/components/tasks/new-task-modal';
 import { cn } from '@/lib/utils';
+import { emitTourEvent, TOUR_EVENTS } from '@/components/guide/tours/targets';
 
 export default function BoardPage() {
   return (
@@ -95,6 +96,7 @@ function Board() {
     },
     onSuccess: () => {
       setError(null);
+      emitTourEvent(TOUR_EVENTS.taskMoved);
       void qc.invalidateQueries({ queryKey: ['kpis'] });
       void qc.invalidateQueries({ queryKey: ['workload'] });
       void qc.invalidateQueries({ queryKey: ['notifications'] });
@@ -145,7 +147,7 @@ function Board() {
               <Users className="h-4 w-4" aria-hidden />
               {t.manager.bulkAssign}
             </Button>
-            <Button size="sm" onClick={() => setNewOpen(true)}>
+            <Button data-tour="new-task-btn" size="sm" onClick={() => setNewOpen(true)}>
               <Plus className="h-4 w-4" aria-hidden />
               {t.manager.newTask}
             </Button>
@@ -206,7 +208,7 @@ function Board() {
         </div>
       ) : (
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div data-tour="kanban-board" className="grid gap-3 scroll-mt-24 md:grid-cols-2 xl:grid-cols-4">
             {TASK_STATUSES.map((status) => (
               <Column
                 key={status}

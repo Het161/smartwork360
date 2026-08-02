@@ -76,8 +76,14 @@ export function KpiCard({
   );
 }
 
-export function KpiGrid({ children, className }: { children: React.ReactNode; className?: string }) {
+export function KpiGrid({
+  children,
+  className,
+  ...rest
+}: React.HTMLAttributes<HTMLDivElement> & { children: React.ReactNode }) {
   return (
-    <div className={cn('grid gap-4 sm:grid-cols-2 xl:grid-cols-4', className)}>{children}</div>
+    <div className={cn('grid gap-4 sm:grid-cols-2 xl:grid-cols-4', className)} {...rest}>
+      {children}
+    </div>
   );
 }

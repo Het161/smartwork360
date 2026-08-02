@@ -96,7 +96,7 @@ export default function EmployeeDashboard() {
           <ErrorState message={(kpis.error as Error)?.message} onRetry={() => kpis.refetch()} />
         </Card>
       ) : (
-        <KpiGrid>
+        <KpiGrid className="scroll-mt-24" data-tour="my-kpis">
           <KpiCard
             label={t.kpi.assigned}
             value={kpis.data ? kpis.data.pending + kpis.data.inProgress + kpis.data.underReview : 0}

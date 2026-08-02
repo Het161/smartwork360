@@ -108,7 +108,7 @@ export default function MyPerformancePage() {
           </CardBody>
         </Card>
 
-        <Card>
+        <Card data-tour="perf-trend" className="scroll-mt-24">
           <CardHeader title={t.employee.cycleTimeTrend} hint="Average hours from raise to completion" />
           <CardBody>
             {isLoading ? (

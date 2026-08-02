@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { emitTourEvent, TOUR_EVENTS } from '@/components/guide/tours/targets';
 
 interface Message {
   id: string;
@@ -44,6 +45,7 @@ export default function AssistantPage() {
         { id: `a-${Date.now()}`, role: 'assistant', text: reply.reply, intent: reply.intent, links: reply.links },
       ]);
       void message;
+      emitTourEvent(TOUR_EVENTS.assistantReplied, { intent: reply.intent });
     },
     onError: (err) => {
       setMessages((prev) => [
@@ -157,7 +159,7 @@ export default function AssistantPage() {
         {/* Suggested questions */}
         <div className="border-t border-borderx px-4 py-2.5">
           <p className="mb-2 text-xs font-medium text-slate-500">{t.assistant.suggestions}</p>
-          <div className="flex flex-wrap gap-1.5">
+          <div data-tour="assistant-chips" className="flex flex-wrap gap-1.5">
             {(suggestions.data?.items ?? []).map((s) => {
               const text = lang === 'hi' ? s.hi : s.en;
               return (
@@ -189,6 +191,7 @@ export default function AssistantPage() {
           className="flex items-center gap-2 border-t border-borderx p-3"
         >
           <Input
+            data-tour="assistant-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t.assistant.placeholder}

@@ -25,6 +25,7 @@ import { Drawer } from '@/components/ui/drawer';
 import { EmptyState, SkeletonTable } from '@/components/ui/states';
 import { BlockChain } from '@/components/audit/block-chain';
 import { cn } from '@/lib/utils';
+import { emitTourEvent, TOUR_EVENTS } from '@/components/guide/tours/targets';
 
 const ACTIONS = [
   'GENESIS',
@@ -110,6 +111,7 @@ export default function AuditExplorerPage() {
     },
     onSuccess: (result) => {
       qc.setQueryData(['verify'], result);
+      emitTourEvent(TOUR_EVENTS.chainVerified, { intact: result.intact });
       void qc.invalidateQueries({ queryKey: ['audit-recent'] });
       void qc.invalidateQueries({ queryKey: ['audit-events'] });
       setVerifying(false);
@@ -134,6 +136,7 @@ export default function AuditExplorerPage() {
         breadcrumbs={[{ label: t.nav.admin }, { label: t.nav.auditExplorer }]}
         action={
           <Button
+            data-tour="verify-chain"
             size="sm"
             variant={intact ? 'primary' : 'danger'}
             loading={verifying}
@@ -332,6 +335,7 @@ export default function AuditExplorerPage() {
                     setEntityId(e.target.value);
                     setPage(1);
                   }}
+                  data-tour="audit-search"
                   placeholder="Entity ID…"
                   aria-label="Filter by entity"
                   className="w-52 pl-9"
