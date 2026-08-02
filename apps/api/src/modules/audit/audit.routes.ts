@@ -89,6 +89,9 @@ auditRouter.get(
  *       - { in: query, name: entityId, schema: { type: string } }
  *       - { in: query, name: actorId, schema: { type: string } }
  *       - { in: query, name: action, schema: { type: string } }
+ *       - { in: query, name: fromIndex, schema: { type: integer }, description: Inclusive lower chainIndex bound }
+ *       - { in: query, name: toIndex, schema: { type: integer }, description: Inclusive upper chainIndex bound }
+ *       - { in: query, name: order, schema: { type: string, enum: [asc, desc], default: desc } }
  *       - { in: query, name: page, schema: { type: integer, default: 1 } }
  *       - { in: query, name: pageSize, schema: { type: integer, default: 25 } }
  *     responses:
@@ -101,11 +104,22 @@ auditRouter.get(
   validateQuery(listAuditQuerySchema),
   asyncHandler(async (req, res) => {
     const q = query<AuditQuery>(req);
+    const window =
+      q.fromIndex !== undefined || q.toIndex !== undefined
+        ? {
+            chainIndex: {
+              ...(q.fromIndex !== undefined ? { gte: q.fromIndex } : {}),
+              ...(q.toIndex !== undefined ? { lte: q.toIndex } : {}),
+            },
+          }
+        : {};
+
     const where = {
       ...(q.entityType ? { entityType: q.entityType } : {}),
       ...(q.entityId ? { entityId: q.entityId } : {}),
       ...(q.actorId ? { actorId: q.actorId } : {}),
       ...(q.action ? { action: q.action } : {}),
+      ...window,
     };
 
     const [total, items] = await Promise.all([
@@ -113,7 +127,7 @@ auditRouter.get(
       prisma.auditEvent.findMany({
         where,
         include: eventInclude,
-        orderBy: { chainIndex: 'desc' },
+        orderBy: { chainIndex: q.order },
         skip: (q.page - 1) * q.pageSize,
         take: q.pageSize,
       }),

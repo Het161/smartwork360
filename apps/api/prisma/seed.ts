@@ -117,6 +117,18 @@ const emailFor = (name: string) => `${slug(name)}@gov.in`;
 /** Stable avatar seed so initials/colours never shuffle between runs. */
 const avatarSeedFor = (name: string) => slug(name).replace(/\./g, '-');
 
+/**
+ * Deterministic primary keys for users and departments.
+ *
+ * `demo:reset` re-seeds mid-demonstration. With cuid() ids, every user is
+ * recreated with a NEW id, the signed-in JWT's subject no longer resolves, and the
+ * presenter is thrown back to the login screen at exactly the wrong moment. Stable
+ * ids mean a reset is invisible to an open session — the page simply refreshes and
+ * the chain is green again.
+ */
+const userIdFor = (name: string) => `usr_${slug(name).replace(/\./g, '_')}`;
+const deptIdFor = (code: string) => `dpt_${code.toLowerCase()}`;
+
 /** Audit blocks are collected here and linked into a chain at the very end. */
 const auditQueue: UnlinkedEvent[] = [];
 
@@ -143,7 +155,7 @@ async function main() {
 
   const deptByCode = new Map<string, { id: string; code: string; name: string }>();
   for (const spec of DEPARTMENTS) {
-    const dept = await prisma.department.create({ data: spec });
+    const dept = await prisma.department.create({ data: { id: deptIdFor(spec.code), ...spec } });
     deptByCode.set(spec.code, dept);
     audit(
       'DEPARTMENT',
@@ -184,6 +196,7 @@ async function main() {
     if (!dept) throw new Error(`Unknown department ${spec.dept}`);
     const user = await prisma.user.create({
       data: {
+        id: userIdFor(spec.name),
         name: spec.name,
         email: emailFor(spec.name),
         passwordHash,

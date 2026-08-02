@@ -247,7 +247,7 @@ export const api = {
 
   /* audit */
   verifyChain: () => request<ChainVerificationDTO>('/audit/verify'),
-  auditEvents: (params: Record<string, string | number | undefined> = {}) =>
+  auditEvents: (params: Record<string, string | number | boolean | undefined> = {}) =>
     request<Paginated<AuditEventDTO>>(`/audit/events${qs(params)}`),
   auditEntity: (type: string, id: string) =>
     request<{ items: AuditEventDTO[]; total: number }>(`/audit/entity/${type}/${id}`),

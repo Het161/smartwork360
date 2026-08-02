@@ -147,6 +147,10 @@ export const listAuditQuerySchema = z.object({
   entityId: z.string().optional(),
   actorId: z.string().optional(),
   action: z.string().optional(),
+  /** Inclusive chainIndex window — lets the Explorer show the blocks around a break. */
+  fromIndex: z.coerce.number().int().min(0).optional(),
+  toIndex: z.coerce.number().int().min(0).optional(),
+  order: z.enum(['asc', 'desc']).default('desc'),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(25),
 });
