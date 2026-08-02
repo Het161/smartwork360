@@ -59,10 +59,22 @@ echo "▸ 3/5  Seeding demo data"
 DATABASE_URL="$DB_URL" npm run seed --silent
 
 echo
-echo "▸ 4/5  Storing DATABASE_URL on Vercel and redeploying"
-printf "%s" "$DB_URL" | npx --yes vercel env add DATABASE_URL production --force >/dev/null 2>&1 || true
+echo "▸ 4/5  Storing DATABASE_URL on the API project and redeploying"
+# The repo root .vercel link is shared between the two projects and may point at
+# the WEB one. Target the API project explicitly rather than trusting the link —
+# adding DATABASE_URL to the web project silently does nothing, which is exactly
+# the failure this comment exists to prevent.
+API_PROJECT="${API_PROJECT:-smartwork360-api}"
+LINK=".vercel/project.json"
+if [ -f "$LINK" ]; then cp "$LINK" "$LINK.bak"; fi
+npx --yes vercel link --yes --project "$API_PROJECT" >/dev/null 2>&1
+
+if ! printf "%s" "$DB_URL" | npx --yes vercel env add DATABASE_URL production --force >/dev/null 2>&1; then
+  echo "       ✖ could not store DATABASE_URL on $API_PROJECT"; exit 1
+fi
 npx --yes vercel deploy --prod --yes --archive=tgz >/dev/null 2>&1
-echo "       redeployed"
+if [ -f "$LINK.bak" ]; then mv "$LINK.bak" "$LINK"; fi
+echo "       stored on $API_PROJECT and redeployed"
 
 echo
 echo "▸ 5/5  Verifying the live API"

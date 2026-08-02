@@ -11,9 +11,16 @@ Two Vercel projects, one shared repository.
 
 - ✅ **API deployed and running.** It reports its own configuration state at
   [`/health`](https://smartwork360-api.vercel.app/health).
-- ⏳ **Needs a database.** Until `DATABASE_URL` is set, every API call returns a
-  clear `NOT_CONFIGURED` 503 naming what is missing — deliberately, rather than a
-  stack trace.
+- ✅ **Database connected** (Neon Postgres). Seeded with 972 audit blocks; the
+  chain verifies live in ~145 ms.
+
+If `DATABASE_URL` is ever missing, the API stays up and returns a clear
+`NOT_CONFIGURED` 503 naming what is absent, rather than a stack trace.
+
+> **Two Vercel projects share one repo root**, so `.vercel/project.json` can point
+> at either. `setup-remote-db.sh` re-links to the API project before writing
+> `DATABASE_URL` — writing it to the web project succeeds silently and does
+> nothing, which is a genuinely confusing failure.
 - ✅ **Web app deployed and rendering** at https://smartwork360.vercel.app
 
 ## Step 1 — a database (2 minutes)
