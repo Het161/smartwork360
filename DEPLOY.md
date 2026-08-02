@@ -14,8 +14,7 @@ Two Vercel projects, one shared repository.
 - ⏳ **Needs a database.** Until `DATABASE_URL` is set, every API call returns a
   clear `NOT_CONFIGURED` 503 naming what is missing — deliberately, rather than a
   stack trace.
-- ⚠️ **Web project needs its Root Directory set to `apps/web`** (a dashboard
-  setting the CLI cannot write). Until then it serves the API placeholder page.
+- ✅ **Web app deployed and rendering** at https://smartwork360.vercel.app
 
 ## Step 1 — a database (2 minutes)
 
@@ -37,16 +36,32 @@ DATABASE_URL="<your pooled url>" npm run db:push
 DATABASE_URL="<your pooled url>" npm run seed
 ```
 
-## Step 2 — fix the web project's root directory
+## How the two projects are configured
 
-Vercel dashboard → **smartwork360** → Settings → **Build & Deployment** →
-**Root Directory** → `apps/web` → enable **"Include files outside of the Root
-Directory"** (required, because `@smartwork/shared` lives in the workspace root).
+`rootDirectory` is a **project setting**, not a `vercel.json` key, so the CLI
+cannot set it. It was applied through the REST API instead:
 
-Redeploy. This is the one step the CLI cannot do — `rootDirectory` is a project
-setting, not a `vercel.json` key.
+```bash
+TOKEN=$(python3 -c "import json;print(json.load(open('$HOME/Library/Application Support/com.vercel.cli/auth.json'))['token'])")
+curl -X PATCH -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  "https://api.vercel.com/v9/projects/<projectId>?teamId=<teamId>" \
+  -d '{"rootDirectory":"apps/web","framework":"nextjs"}'
+```
 
-## Step 3 — point the web app at the API
+| | `smartwork360` (web) | `smartwork360-api` |
+|---|---|---|
+| Root directory | `apps/web` | repo root |
+| Local config | `vercel.web.json` | `vercel.json` |
+| Deploy from | repo root, `--local-config vercel.web.json` | repo root |
+
+Both deploy from the repository root so npm workspaces resolve; deploying from
+`apps/web` alone uploads only that folder and npm then tries to fetch
+`@smartwork/shared` from the public registry (404).
+
+`apps/web` has a `prebuild` script that compiles `@smartwork/shared` first —
+Vercel builds only the one workspace, so nothing else would produce its `dist/`.
+
+## Point the web app at the API
 
 Already set:
 
