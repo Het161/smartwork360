@@ -22,7 +22,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,json,md,css}\"",
     "typecheck": "npm run typecheck -w @smartwork/shared && npm run typecheck -w @smartwork/api && npm run typecheck -w @smartwork/web",
-    "eval:ml": "cd services/ml && (test -d .venv || python3 -m venv .venv) && ./.venv/bin/python -m pip install -q -r requirements.txt && ./.venv/bin/python eval/eval_sentiment.py"
+    "eval:ml": "cd services/ml && (test -d .venv || python3 -m venv .venv) && ./.venv/bin/python -m pip install -q -r requirements.txt && ./.venv/bin/python eval/eval_sentiment.py",
+    "deploy:db": "./scripts/setup-remote-db.sh"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
