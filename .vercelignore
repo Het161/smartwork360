@@ -1,0 +1,25 @@
+# Vercel installs dependencies itself — never upload them.
+node_modules
+**/node_modules
+
+# Build output, regenerated on the server
+.next
+**/.next
+dist
+**/dist
+apps/api/dist
+packages/shared/dist
+
+# Python ML service is deployed separately (it is optional — the API has a
+# built-in fallback), and its venv is enormous.
+services/ml/.venv
+services/ml/.venv313
+services/ml/models
+**/__pycache__
+
+# Local-only
+.git
+.env
+**/.env
+*.log
+.DS_Store

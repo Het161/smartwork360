@@ -6,7 +6,9 @@ import { z } from 'zod';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const envSchema = z.object({
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required — copy apps/api/.env.example'),
+  // Validated below rather than here: a serverless function must not die at import
+  // time over a missing variable, or the only symptom is an opaque 500.
+  DATABASE_URL: z.string().default(''),
   PORT: z.coerce.number().int().default(4000),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
@@ -46,16 +48,41 @@ const envSchema = z.object({
 
 const parsed = envSchema.safeParse(process.env);
 
+/** Runs as a serverless function (Vercel) rather than a long-lived process. */
+export const isServerless = Boolean(process.env.VERCEL);
+
 if (!parsed.success) {
   console.error('\n✖ Invalid environment configuration:\n');
   for (const issue of parsed.error.issues) {
     console.error(`  • ${issue.path.join('.')}: ${issue.message}`);
   }
   console.error('\n  Fix: cp apps/api/.env.example apps/api/.env\n');
-  process.exit(1);
+  // A local server should die loudly and immediately. A deployed function must
+  // not: process.exit() there produces FUNCTION_INVOCATION_FAILED with no clue
+  // what is missing. It stays up and reports the problem instead.
+  if (!isServerless) process.exit(1);
 }
 
-export const env = parsed.data;
+export const env = parsed.success
+  ? parsed.data
+  : (envSchema.parse({}) as z.infer<typeof envSchema>);
+
+/**
+ * Configuration problems that make the API unusable but should be *reported*,
+ * not crashed on. `/health` always answers; everything else returns 503 with
+ * this list so a deployment can explain itself.
+ */
+export const configErrors: string[] = [];
+if (!env.DATABASE_URL) {
+  configErrors.push(
+    'DATABASE_URL is not set — the API cannot reach a database. Add it in the Vercel project settings (or apps/api/.env locally).',
+  );
+}
+if (!parsed.success) {
+  for (const issue of parsed.error.issues) {
+    configErrors.push(`${issue.path.join('.')}: ${issue.message}`);
+  }
+}
 
 export const corsOrigins = env.CORS_ORIGIN.split(',')
   .map((o) => o.trim())

@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
-import { isAllowedOrigin } from './config/env';
+import { configErrors, isAllowedOrigin, isServerless } from './config/env';
 import { countDocumentedRoutes, swaggerSpec } from './config/swagger';
 import { buildApiRouter } from './routes';
 import { errorHandler, notFoundHandler } from './middleware/errors';
@@ -30,8 +30,10 @@ export function createApp(): Application {
   app.use(cookieParser());
 
   app.get('/health', (_req, res) => {
-    res.json({
-      status: 'ok',
+    res.status(configErrors.length ? 503 : 200).json({
+      status: configErrors.length ? 'misconfigured' : 'ok',
+      configErrors,
+      runtime: isServerless ? 'serverless' : 'server',
       service: 'smartwork360-api',
       documentedRoutes: countDocumentedRoutes(),
       time: new Date().toISOString(),
@@ -47,6 +49,19 @@ export function createApp(): Application {
     }),
   );
   app.get('/openapi.json', (_req, res) => res.json(swaggerSpec));
+
+  // A misconfigured deployment answers every API call with the reason, rather
+  // than a stack trace from the first query that touches the database.
+  app.use('/api/v1', (req, res, next) => {
+    if (configErrors.length === 0) return next();
+    return res.status(503).json({
+      error: {
+        code: 'NOT_CONFIGURED',
+        message: 'The API is deployed but not fully configured.',
+        details: configErrors,
+      },
+    });
+  });
 
   app.use('/api/v1', buildApiRouter());
 

@@ -30,3 +30,4 @@ npm-debug.log*
 # generated
 apps/api/src/generated/
 # NOTE: apps/web/public/sw.js is hand-written and IS committed (see DECISIONS.md 0.8).
+.vercel
