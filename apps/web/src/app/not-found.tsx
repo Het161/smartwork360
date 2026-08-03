@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import { FileQuestion } from 'lucide-react';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export default function NotFound() {
   return (
     <main id="main-content" className="grid min-h-screen place-items-center bg-canvas px-6">
       <div className="gt-card max-w-md p-8 text-center">
+        <BrandLogo variant="lockup" size="md" className="mb-6 justify-center" />
         <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-primary-50 text-primary">
           <FileQuestion className="h-5 w-5" aria-hidden />
         </div>

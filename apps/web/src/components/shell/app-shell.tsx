@@ -13,6 +13,7 @@ import { Topbar } from './topbar';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
+import { PrintHeader } from '@/components/brand/PrintHeader';
 
 export function AppShell({
   role,
@@ -51,6 +52,7 @@ export function AppShell({
       <div className="lg:pl-60">
         <Topbar onOpenNav={() => setNavOpen(true)} />
         <main id="main-content" className="mx-auto max-w-shell px-4 py-6 lg:px-6">
+          <PrintHeader />
           {children}
         </main>
       </div>

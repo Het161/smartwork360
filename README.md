@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="docs/mark-512.png" alt="" width="96" height="96">
+</p>
+
+<p align="center">
   <img src="docs/hero.svg" alt="SMARTWORK 360 — Smart Task and Performance Management for Government Offices" width="100%">
 </p>
 

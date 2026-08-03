@@ -138,8 +138,80 @@
   }
 }
 
+/* The print header exists only on paper. */
+.print-header {
+  display: none;
+}
+
 @media print {
   .no-print {
     display: none !important;
+  }
+
+  /* Chrome drops backgrounds by default, which turns the navy sidebar into a
+     white column of unreadable white text. Everything that carries meaning
+     through colour is hidden instead. */
+  aside[aria-label='Main navigation'],
+  header[data-chrome='topbar'],
+  [data-tour='help-fab'],
+  [data-tour='support-dock'],
+  .skip-link {
+    display: none !important;
+  }
+
+  /* The sidebar is gone, so the content must reclaim its offset. */
+  .lg\:pl-60 {
+    padding-left: 0 !important;
+  }
+
+  /* Any brand mark still on the page prints as the single-colour version —
+     navy and saffron are two similar greys on a monochrome printer. */
+  .brand-logo img {
+    content: url('/brand/mark-mono.svg');
+  }
+
+  .print-header {
+    display: block;
+    margin-bottom: 18px;
+  }
+
+  .print-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .print-header-meta {
+    text-align: right;
+    font-size: 11px;
+    color: #334155;
+  }
+
+  .print-header-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: #000;
+  }
+
+  .print-header-rule {
+    height: 2px;
+    background: #000;
+    margin: 10px 0 6px;
+  }
+
+  .print-header-note {
+    font-size: 10px;
+    color: #475569;
+  }
+
+  /* Cards should not be split across a page break mid-figure. */
+  .gt-card {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  @page {
+    margin: 14mm;
   }
 }

@@ -21,6 +21,7 @@ import { useI18n } from '@/i18n/provider';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 const DEMO_ACCOUNTS = [
   {
@@ -97,20 +98,15 @@ export default function LoginPage() {
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
       {/* Left — government identity panel */}
       <section className="relative hidden flex-col justify-between bg-primary p-10 text-white lg:flex">
-        <div className="flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-full border-2 border-saffron text-sm font-bold">
-            GoI
-          </span>
-          <div>
-            <p className="text-lg font-semibold leading-tight">{t.app.name}</p>
-            <p className="text-sm text-white/70">{t.app.portal}</p>
-          </div>
-        </div>
+        <p className="text-sm font-medium uppercase tracking-wider text-white/60">
+          {t.app.portal}
+        </p>
 
         <div className="max-w-md">
           <div className="tricolor-rule mb-6 h-1 w-28 rounded-full" />
-          <h1 className="text-4xl font-semibold leading-tight">{t.app.name}</h1>
-          <p className="mt-3 text-lg leading-relaxed text-white/80">{t.app.tagline}</p>
+          {/* The one place the logo loads eagerly — it is the largest thing
+              above the fold on the first screen anybody sees. */}
+          <BrandLogo variant="stacked" theme="dark" size="lg" showTagline priority className="items-start text-left" />
 
           <ul className="mt-8 space-y-3 text-base text-white/75">
             <li className="flex items-start gap-2.5">
@@ -135,12 +131,7 @@ export default function LoginPage() {
       <section className="flex flex-col justify-center px-6 py-10 sm:px-12">
         <main id="main-content" className="mx-auto w-full max-w-sm">
           <div className="mb-6 flex items-center justify-between lg:hidden">
-            <span className="flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-full border-2 border-saffron text-[10px] font-bold text-primary">
-                GoI
-              </span>
-              <span className="font-semibold text-slate-900">{t.app.name}</span>
-            </span>
+            <BrandLogo variant="lockup" theme="light" size="sm" />
           </div>
 
           <div className="mb-6 flex items-start justify-between gap-4">

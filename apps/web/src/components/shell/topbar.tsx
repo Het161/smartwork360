@@ -30,7 +30,10 @@ export function Topbar({ onOpenNav }: { onOpenNav: () => void }) {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-borderx bg-white/95 backdrop-blur">
+    <header
+      data-chrome="topbar"
+      className="sticky top-0 z-20 border-b border-borderx bg-white/95 backdrop-blur"
+    >
       <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
         <Button
           variant="ghost"

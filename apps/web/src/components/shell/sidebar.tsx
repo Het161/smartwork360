@@ -6,6 +6,7 @@ import type { Role } from '@smartwork/shared';
 import { AlertTriangle, BarChart3, Building2, ClipboardList, FileBarChart, Gauge, HeartPulse, KanbanSquare, LayoutDashboard, MessageSquareText, ScanSearch, Settings, ShieldCheck, Trophy, Bot } from 'lucide-react';
 import { useI18n } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 interface NavItem {
   href: string;
@@ -58,15 +59,14 @@ export function Sidebar({ role }: { role: Role }) {
       className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-sidebar lg:flex"
       aria-label="Main navigation"
     >
-      {/* Generic departmental monogram — deliberately NOT the State Emblem of
-          India, whose use is restricted by law. */}
+      {/* The product mark — deliberately NOT the State Emblem of India, whose
+          use is restricted by law. White variant: this panel is dark navy. */}
       <div className="flex items-center gap-3 px-5 py-5">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-saffron text-xs font-bold text-white">
-          GoI
-        </span>
+        <BrandLogo variant="mark" theme="dark" size="md" />
         <span className="min-w-0">
-          <span className="block truncate text-md font-semibold leading-tight text-white">
-            {t.app.name}
+          <span className="block truncate text-md font-bold leading-tight tracking-tight">
+            <span className="text-white">SMARTWORK</span>
+            <span className="text-saffron"> 360</span>
           </span>
           <span className="block truncate text-xs text-white/60">{t.app.portal}</span>
         </span>

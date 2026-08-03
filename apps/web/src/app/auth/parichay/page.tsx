@@ -9,6 +9,7 @@ import { HOME_FOR, useAuth } from '@/lib/auth';
 import { useI18n } from '@/i18n/provider';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/input';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 /**
  * Mock Parichay SSO.
@@ -47,6 +48,11 @@ export default function ParichayPage() {
       <header className="bg-primary text-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-3">
+            {/* Parichay's own monogram, not ours, and deliberately kept: this
+                screen is a MOCK of somebody else's single sign-on, so putting
+                the SMARTWORK mark in the masthead would misrepresent whose
+                service the user is looking at. Our mark sits subordinate on the
+                right, next to the sandbox badge. */}
             <span className="grid h-10 w-10 place-items-center rounded-full border-2 border-saffron text-xs font-bold">
               GoI
             </span>
@@ -55,9 +61,16 @@ export default function ParichayPage() {
               <p className="text-xs text-white/70">National Single Sign-On · Government of India</p>
             </div>
           </div>
-          <span className="rounded-full bg-saffron px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#5C2E00]">
-            {t.login.sandboxBadge}
-          </span>
+          <div className="flex items-center gap-3">
+            {/* The relying party, deliberately smaller than the Parichay
+                masthead: this screen is a mock of somebody else's SSO, and
+                making our own mark dominant would misrepresent that. White
+                variant because the masthead is navy. */}
+            <BrandLogo variant="lockup" theme="dark" size="sm" className="hidden opacity-90 sm:inline-flex" />
+            <span className="rounded-full bg-saffron px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#5C2E00]">
+              {t.login.sandboxBadge}
+            </span>
+          </div>
         </div>
         <div className="tricolor-rule h-1" />
       </header>

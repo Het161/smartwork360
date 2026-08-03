@@ -18,6 +18,26 @@ const MUTED = '#64748B';
 const FONT =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
+/**
+ * Absolute base for images in emails.
+ *
+ * `PUBLIC_WEB_URL` is accepted, but it falls back to `APP_BASE_URL` rather than
+ * being a second required variable: the two would always have to hold the same
+ * value, and when they drifted the sign-in link would work while the logo
+ * silently broke — a difference nobody notices until a real user reports it.
+ */
+const WEB_URL = (process.env.PUBLIC_WEB_URL || process.env.APP_BASE_URL || 'http://localhost:3000')
+  .replace(/\/+$/, '');
+
+/**
+ * The WHITE mark, and a PNG rather than the SVG.
+ *
+ * PNG because email clients — Outlook above all — do not reliably render SVG at
+ * all. White because this sits on the navy header band: the default navy mark
+ * would leave three orange squares floating on navy with the S invisible.
+ */
+const LOGO_URL = `${WEB_URL}/brand/mark-white-512.png`;
+
 function shell(title: string, body: string): string {
   return `<!doctype html>
 <html lang="en">
@@ -37,11 +57,12 @@ function shell(title: string, body: string): string {
             <td style="background:${NAVY};padding:24px 28px;">
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="padding-right:12px;vertical-align:middle;">
-                    <div style="width:40px;height:40px;border:2px solid ${SAFFRON};border-radius:50%;text-align:center;line-height:36px;color:#FFFFFF;font-size:12px;font-weight:bold;">GoI</div>
+                  <td style="padding-right:14px;vertical-align:middle;">
+                    <img src="${LOGO_URL}" width="56" height="56" alt="SMARTWORK 360"
+                         style="display:block;width:56px;height:56px;border:0;outline:none;text-decoration:none;">
                   </td>
                   <td style="vertical-align:middle;">
-                    <div style="color:#FFFFFF;font-size:18px;font-weight:600;letter-spacing:0.3px;">SMARTWORK 360</div>
+                    <div style="color:#FFFFFF;font-size:18px;font-weight:700;letter-spacing:0.2px;">SMARTWORK <span style="color:${SAFFRON};">360</span></div>
                     <div style="color:rgba(255,255,255,0.72);font-size:12px;margin-top:2px;">स्मार्ट कार्य एवं प्रदर्शन प्रबंधन</div>
                   </td>
                 </tr>

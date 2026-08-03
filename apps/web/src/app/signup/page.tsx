@@ -40,6 +40,7 @@ import {
   useCountdown,
 } from '@/components/signup/bits';
 import { cn } from '@/lib/utils';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 const STEPS = ['Details', 'Department', 'Verify', 'Done'];
 
@@ -213,11 +214,12 @@ function Signup() {
       <section className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-white lg:flex">
         <AmbientOrbs />
         <div className="relative flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-full border-2 border-saffron text-sm font-bold">
-            GoI
-          </span>
+          <BrandLogo variant="mark" theme="dark" size="lg" />
           <div>
-            <p className="text-lg font-semibold leading-tight">{t.app.name}</p>
+            <p className="text-lg font-bold leading-tight tracking-tight">
+              <span className="text-white">SMARTWORK</span>
+              <span className="text-saffron"> 360</span>
+            </p>
             <p className="text-sm text-white/70">{t.app.portal}</p>
           </div>
         </div>
@@ -269,6 +271,10 @@ function Signup() {
           <StepProgress step={step} total={STEPS.length} labels={STEPS} />
 
           <motion.div layout={!reduced} transition={spring} className="gt-card overflow-hidden p-6">
+            {/* Outside AnimatePresence on purpose: the mark should hold still
+                while the steps slide underneath it, so branding persists
+                through all four steps rather than re-entering each time. */}
+            <BrandLogo variant="mark" size="sm" className="mb-4" />
             <AnimatePresence mode="wait" custom={direction} initial={false}>
               {/* ------------------------------------------------ STEP 1 */}
               {step === 1 ? (
