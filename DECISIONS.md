@@ -38,7 +38,7 @@ Every non-obvious engineering decision, with one line of reasoning. Newest phase
 
 | # | Decision | Reasoning |
 |---|---|---|
-| 2.1 | 51 documented endpoints, not the 30 the brief asked for | The screens in the spec need them (SLA policy editor, CSV exports, scatter data, precision stat, suggestions). Every one is reachable and Swagger-documented — the count is real, not padded. |
+| 2.1 | 66 documented endpoints, not the 30 the brief asked for | The screens in the spec need them (SLA policy editor, CSV exports, scatter data, precision stat, suggestions). Every one is reachable and Swagger-documented — the count is real, not padded. |
 | 2.2 | `diffFields()` records only fields that actually changed | An audit payload is evidence. Dumping the whole row on every edit makes the chain unreadable and hides what a reviewer needs to see. |
 | 2.3 | Maker-checker separation enforced in the service, on BOTH completion paths | `POST /tasks/:id/status` and `POST /tasks/:id/review` can each reach COMPLETED, so the "you cannot approve your own task" rule is checked in both. Verified against a manager assigned their own task. |
 | 2.4 | The fraud detector reads the AUDIT CHAIN, not the task table | The chain is the one record that cannot be quietly rewritten — which is exactly what a fraud detector should be reading. Verified: it independently scores Vikas Meena at 0.990 vs 0.300 for the next user. |

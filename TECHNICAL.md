@@ -52,7 +52,7 @@ flowchart LR
   end
 
   subgraph Server
-    A["Express + Prisma<br/>api :4000<br/>51 documented endpoints"]
+    A["Express + Prisma<br/>api :4000<br/>66 documented endpoints"]
     AU["Audit service<br/>SHA-256 hash chain"]
     CR["node-cron<br/>SLA scanner, 60s"]
   end
@@ -262,7 +262,7 @@ alone — both verified in the browser.
 | 85–90% sentiment accuracy | **87.5%** | `npm run eval:ml`, held-out corpus |
 | ~92% fraud detection precision | **11/12 = 92%** | Fraud & Risk Center. Labelled evaluation set only — runtime alerts are unlabelled and excluded so the figure cannot drift upward. |
 | 100% tamper-evident audit trail | 962 blocks, 15ms | `GET /audit/verify`, plus the tamper demo |
-| 30+ documented REST APIs | **51 operations** | <http://localhost:4000/docs> |
+| 30+ documented REST APIs | **66 operations** | <http://localhost:4000/docs> |
 
 ---
 

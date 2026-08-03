@@ -177,7 +177,7 @@ typed into a slide.
 | Mood detection is 85–90% accurate | **87.5%** | `npm run eval:ml` |
 | Fraud detection ~92% precise | **11 of 12** | Fraud & Risk Center |
 | Records are tamper-evident | **962 blocks, 15 ms** | Blockchain Audit → Verify |
-| 30+ documented APIs | **57** | <http://localhost:4000/docs> |
+| 30+ documented APIs | **66** | <http://localhost:4000/docs> |
 
 **What is simulated, stated plainly:**
 

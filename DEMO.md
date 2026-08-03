@@ -275,7 +275,7 @@ Finish on **Org Overview**, then click **हिंदी** in the top bar.
 | 85–90% sentiment accuracy | `npm run eval:ml` · model cards | **87.5%** on a 40-comment held-out set never used for tuning. |
 | ~92% fraud detection precision | Fraud & Risk Center precision card | **11/12** labelled alerts confirmed on review. Runtime alerts are unlabelled and excluded. |
 | 100% tamper-evident audit trail | Blockchain Audit Explorer | Live `Verify chain` over 962 blocks; the tamper demo above. |
-| 30+ documented REST APIs | `http://localhost:4000/docs` | **51** operations across 12 tags, generated from the route source. |
+| 30+ documented REST APIs | `http://localhost:4000/docs` | **66** operations across 14 tags, generated from the route source. |
 
 ## If something goes wrong
 

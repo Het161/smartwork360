@@ -49,11 +49,21 @@ export const swaggerSpec = swaggerJsdoc({
       { name: 'Chat', description: 'Grounded AI task assistant' },
       { name: 'Notifications', description: 'SLA and assignment notifications' },
       { name: 'Reports', description: 'CSV exports' },
+      {
+        name: 'Support',
+        description:
+          'Saarthi Support — scope-locked assistant and guarded auto-remediation. The model proposes; the server validates, authorises, executes and audits.',
+      },
     ],
   },
   apis: [
     path.join(__dirname, '../modules/**/*.routes.ts'),
     path.join(__dirname, '../modules/**/*.routes.js'),
+    // Saarthi Support lives outside modules/ because it is a cross-cutting
+    // surface rather than one domain. Without these two lines its endpoints
+    // are live but undocumented, which is the worst of both.
+    path.join(__dirname, '../support/**/*.routes.ts'),
+    path.join(__dirname, '../support/**/*.routes.js'),
   ],
 });
 
