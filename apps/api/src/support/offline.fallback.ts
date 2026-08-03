@@ -17,6 +17,8 @@
 import { matchError, matchFeature, type RetrievedChunk } from './retriever';
 import type { SupportReply, SuggestedFix } from './schema';
 import { REFUSAL, CHAIN_REFUSAL, isChainRepairRequest, looksOffTopic } from './scope.guard';
+import { rolesAllowedFor } from './remediation/registry';
+import type { Role } from '@smartwork/shared';
 
 /**
  * Floors a document must clear before this path will answer from it.
@@ -62,9 +64,13 @@ function firstSentences(text: string, count: number): string {
  */
 function argsFromContext(
   action: string,
-  ctx: { errorDetails?: string | null; departmentId?: string | null },
+  ctx: { errorDetails?: string | null; departmentId?: string | null; message?: string },
 ): Record<string, unknown> | null {
-  const text = ctx.errorDetails ?? '';
+  // The server's error record is the reliable source, but a user may also type
+  // the identifiers themselves ("...for the Health department, id dpt_hlt"), so
+  // both are searched. Everything found is still validated against the action's
+  // own schema before it can become a button.
+  const text = `${ctx.errorDetails ?? ''}\n${ctx.message ?? ''}`;
   const pick = (key: string) =>
     new RegExp(`"?${key}"?\\s*[:=]\\s*"?([A-Za-z0-9_-]{2,40})"?`, 'i').exec(text)?.[1] ?? null;
 
@@ -156,6 +162,7 @@ export async function answerOffline(input: {
       const args = argsFromContext(fixAction, {
         errorDetails: input.errorDetails,
         departmentId: input.departmentId,
+        message: input.message,
       });
       if (args) {
         suggestedFix = {
@@ -168,9 +175,21 @@ export async function answerOffline(input: {
       }
     }
 
-    const answer = [why ? firstSentences(why, 2) : null, todo ? firstSentences(todo, 2) : null]
+    let answer = [why ? firstSentences(why, 2) : null, todo ? firstSentences(todo, 2) : null]
       .filter(Boolean)
       .join(' ');
+
+    // Naming the role is useful even when no fix can be offered — otherwise an
+    // employee reads an explanation and still does not know who to ask.
+    if (fixAction && !suggestedFix) {
+      const roles = rolesAllowedFor(fixAction);
+      if (roles.length && !roles.includes(input.role as Role)) {
+        const who = roles.join(' or ').toLowerCase();
+        answer += hi
+          ? ` यह बदलाव केवल ${who === 'admin' ? 'प्रशासक' : who} कर सकते हैं।`
+          : ` Only ${who === 'admin' ? 'an administrator' : `a ${who}`} can make that change.`;
+      }
+    }
 
     return {
       questionSubject: top.errorCode,

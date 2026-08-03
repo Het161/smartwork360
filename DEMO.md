@@ -171,6 +171,48 @@ Show the evidence panel:
 > We label it rather than delete it. And alerts raised at runtime carry no label,
 > so pressing *Run scan now* can never inflate that number."
 
+## 5:00 — AI moment 4: the system repairs itself, but never the evidence
+
+Still as **Rajesh Iyer**. Go to **Task Board → New task**.
+
+- Department **Health**, priority **Critical**, any assignee, **Submit**.
+- It fails: *"There is no critical deadline rule for this department, so the due
+  date cannot be worked out."*
+
+Instead of calling IT, click **Ask Saarthi about this**.
+
+- The panel opens with the failure already attached — `POST /tasks · 400 ·
+  SLA_POLICY_MISSING`. Nothing is typed.
+- Press send. Saarthi explains the missing SLA rule in plain English and cites
+  the knowledge-base sections it used.
+- An amber card offers **Apply fix**. Press it.
+- It turns green: *"Added a CRITICAL rule of 24 hours for Health. Try creating
+  the task again. Recorded on the audit chain as block #961."* An **Undo** link
+  sits underneath for fifteen minutes.
+- Re-open **New task**, same details, **Submit**. It creates.
+
+Now the part that matters. Ask Saarthi:
+
+> **"fix the broken audit chain"**
+
+It refuses, and explains why: a broken chain is evidence that records were
+altered outside the application, so repairing it would destroy the only proof
+that anything happened.
+
+> "The assistant can heal the system, but it can never touch the evidence. That
+> refusal is not a setting we could switch on — there is no action in the
+> registry that can write to an audit record, so there is nothing to switch.
+> Everything it *can* do is twelve whitelisted actions, each re-checked against
+> your role and your department on the server, each confirmed by a human, and
+> each written to the chain in the same transaction as the change itself."
+
+Show **Administration → AI Fix Log**: every AI-applied change, who confirmed it,
+and the reason they typed.
+
+> "And it works with the network unplugged. The fix arguments come from the
+> server's own record of the failure, not from the model — so the whole loop
+> runs offline, which is how we rehearse it."
+
 ## 5:15 — The blockchain moment
 
 **Blockchain Audit** in the nav.
@@ -239,6 +281,8 @@ Finish on **Org Overview**, then click **हिंदी** in the top bar.
 
 | Symptom | Fix |
 |---|---|
+| Saarthi Support says it is unavailable | The API is not running, or CORS does not list the web origin. The panel still opens; only the answer fails. |
+| Answers are prefixed "Offline mode" | No `SUPPORT_LLM_API_KEY`, or `SUPPORT_BOT_MODE=offline`. This is a supported path — auto-fix still works. |
 | Saarthi's welcome modal does not appear | It shows once per role. Clear it with `localStorage.clear()` in the console, or use **Restart tour** from the corner button. |
 | Signup says "too many attempts" | 5 successful registrations per hour per IP. Restart the API to clear it, or raise `SIGNUP_RATE_LIMIT_PER_HOUR`. Failed validations do not count. |
 | No OTP visible | `MAIL_MODE=console` (the default) prints a boxed code in the API terminal and shows a DEV chip in the UI. |
