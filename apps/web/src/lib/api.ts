@@ -22,6 +22,8 @@ import type {
   AnchorDTO,
 } from '@smartwork/shared';
 
+import { captureError } from './error-capture';
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 const TOKEN_KEY = 'sw360_access_token';
@@ -43,6 +45,8 @@ export class ApiError extends Error {
     message: string,
     public code = 'ERROR',
     public details?: { field: string; message: string }[],
+    /** Ties this failure to the server's own record of it. */
+    public correlationId?: string | null,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -84,15 +88,33 @@ async function request<T>(path: string, options: RequestOptions = {}, isRetry = 
     let message = `Request failed (${res.status})`;
     let code = 'ERROR';
     let details: { field: string; message: string }[] | undefined;
+    let correlationId: string | null = res.headers.get('x-correlation-id');
     try {
       const json = await res.json();
       message = json?.error?.message ?? message;
       code = json?.error?.code ?? code;
       details = json?.error?.details;
+      correlationId = json?.error?.correlationId ?? correlationId;
     } catch {
       /* non-JSON error body — keep the generic message */
     }
-    throw new ApiError(res.status, message, code, details);
+
+    // Remembered here, at the single point every API failure passes through,
+    // so no screen has to opt in for "Ask Saarthi about this" to work.
+    // 401s are excluded: an expired token is retried silently above and is not
+    // a problem the user needs explained.
+    if (res.status !== 401) {
+      captureError({
+        correlationId,
+        endpoint: path,
+        method: (rest.method ?? 'GET').toUpperCase(),
+        status: res.status,
+        errorCode: code,
+        message,
+      });
+    }
+
+    throw new ApiError(res.status, message, code, details, correlationId);
   }
 
   if (res.status === 204) return undefined as T;
@@ -311,7 +333,141 @@ export const api = {
       completedThisMonth: number;
       auditBlocks: number;
     }>('/reports/summary'),
+
+  /* ------------------------------------------------------ saarthi support */
+  supportActions: () =>
+    request<{ items: { name: string; description: string; args: string; risk: string }[] }>(
+      '/support/actions',
+    ),
+  applyFix: (id: string, reason?: string) =>
+    request<{
+      fixId: string;
+      status: string;
+      summary: string;
+      undoable: boolean;
+      undoExpiresAt: string | null;
+      auditChainIndex: number;
+    }>(`/support/fixes/${id}/apply`, { method: 'POST', body: { reason } }),
+  undoFix: (id: string) =>
+    request<{ summary: string; auditChainIndex: number }>(`/support/fixes/${id}/undo`, {
+      method: 'POST',
+    }),
+  supportFixLog: (params: { status?: string; action?: string } = {}) => {
+    const q = new URLSearchParams();
+    if (params.status) q.set('status', params.status);
+    if (params.action) q.set('action', params.action);
+    return request<{ items: SupportFixLogEntry[] }>(`/support/fixes?${q.toString()}`);
+  },
+  reindexKb: () => request<{ chunks: number }>('/support/kb/reindex', { method: 'POST' }),
 };
+
+export interface SupportFixLogEntry {
+  id: string;
+  action: string;
+  args: Record<string, unknown>;
+  risk: 'low' | 'medium';
+  status: 'PROPOSED' | 'APPLIED' | 'FAILED' | 'UNDONE';
+  actor: { id: string; name: string; role: string };
+  result: string | null;
+  reason: string | null;
+  createdAt: string;
+  appliedAt: string | null;
+  undoneAt: string | null;
+}
+
+export interface SupportReplyDTO {
+  questionSubject: string;
+  inScope: boolean;
+  answer: string;
+  confidence: 'high' | 'medium' | 'low';
+  citations: string[];
+  suggestedFix: { action: string; args: Record<string, unknown>; reason: string } | null;
+  followUps: string[];
+  offline: boolean;
+  conversationId: string;
+  fixId: string | null;
+  fixRisk: 'low' | 'medium' | null;
+  fixTitle: string | null;
+  injectionDetected: boolean;
+}
+
+/**
+ * Streams a support answer.
+ *
+ * Uses fetch rather than EventSource because EventSource cannot send an
+ * Authorization header, and this endpoint is authenticated. `onToken` fires as
+ * text arrives; `done` carries the validated reply the server actually stands
+ * behind — the tokens are presentation, the final object is the contract.
+ */
+export async function streamSupportChat(
+  input: {
+    message: string;
+    conversationId?: string;
+    lang: 'en' | 'hi';
+    currentRoute: string;
+    correlationId?: string | null;
+    pastedError?: string | null;
+  },
+  handlers: {
+    onToken?: (text: string) => void;
+    onThinking?: () => void;
+    onDone: (reply: SupportReplyDTO) => void;
+    onError: (message: string) => void;
+  },
+  signal?: AbortSignal,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/support/chat`, {
+    method: 'POST',
+    credentials: 'include',
+    signal,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+    },
+    body: JSON.stringify(input),
+  });
+
+  if (!res.ok || !res.body) {
+    handlers.onError('Saarthi is unavailable right now.');
+    return;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    // SSE frames are separated by a blank line; a partial frame stays in the
+    // buffer until the rest of it arrives.
+    let split = buffer.indexOf('\n\n');
+    while (split !== -1) {
+      const frame = buffer.slice(0, split);
+      buffer = buffer.slice(split + 2);
+      split = buffer.indexOf('\n\n');
+
+      const eventLine = frame.split('\n').find((l) => l.startsWith('event: '));
+      const dataLine = frame.split('\n').find((l) => l.startsWith('data: '));
+      if (!eventLine || !dataLine) continue;
+
+      const event = eventLine.slice(7).trim();
+      let payload: unknown;
+      try {
+        payload = JSON.parse(dataLine.slice(6));
+      } catch {
+        continue;
+      }
+
+      if (event === 'thinking') handlers.onThinking?.();
+      else if (event === 'token') handlers.onToken?.((payload as { text: string }).text);
+      else if (event === 'done') handlers.onDone(payload as SupportReplyDTO);
+      else if (event === 'error') handlers.onError((payload as { message: string }).message);
+    }
+  }
+}
 
 /** CSV downloads need the bearer token, so they go through fetch + a blob URL. */
 export async function downloadCsv(path: string, filename: string) {

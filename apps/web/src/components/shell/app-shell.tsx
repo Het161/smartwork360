@@ -14,8 +14,22 @@ import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 
-export function AppShell({ role, children }: { role: Role; children: React.ReactNode }) {
-  const { user, loading } = useRequireRole(role);
+export function AppShell({
+  role,
+  allow,
+  children,
+}: {
+  role: Role;
+  /**
+   * Roles permitted on these pages, when that is wider than the section they
+   * belong to. An administrator can do everything a manager can — including
+   * creating a task in any department — so locking the manager section to
+   * MANAGER alone left admins with no task-creation screen at all.
+   */
+  allow?: Role[];
+  children: React.ReactNode;
+}) {
+  const { user, loading } = useRequireRole(...(allow ?? [role]));
   const [navOpen, setNavOpen] = useState(false);
 
   if (loading || !user) {

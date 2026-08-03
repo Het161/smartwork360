@@ -1,8 +1,9 @@
 'use client';
 
-import { AlertTriangle, Inbox, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Inbox, RefreshCw, LifeBuoy } from 'lucide-react';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
+import { openSupport } from '@/lib/support-dock';
 
 /** Skeleton loader — every data fetch shows one of these, never a blank panel. */
 export function Skeleton({ className }: { className?: string }) {
@@ -77,12 +78,54 @@ export function ErrorState({
       <p className="mt-1 max-w-sm text-sm text-slate-500">
         {message ?? 'The request could not be completed.'}
       </p>
-      {onRetry ? (
-        <Button variant="secondary" size="sm" className="mt-4" onClick={onRetry}>
-          <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-          Try again
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        {onRetry ? (
+          <Button variant="secondary" size="sm" onClick={onRetry}>
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+            Try again
+          </Button>
+        ) : null}
+        {/* The failure is already captured by the API client, so this opens the
+            panel with the real error attached — the user types nothing. */}
+        <Button variant="ghost" size="sm" onClick={() => openSupport()}>
+          <LifeBuoy className="h-3.5 w-3.5" aria-hidden />
+          Ask Saarthi about this
         </Button>
-      ) : null}
+      </div>
     </div>
+  );
+}
+
+/**
+ * Inline "Ask Saarthi about this" for places that show their own error text —
+ * a form banner, a mutation failure — rather than a whole ErrorState.
+ */
+export function AskSaarthiButton({
+  className,
+  onBeforeOpen,
+}: {
+  className?: string;
+  /**
+   * Runs before the panel opens. Callers inside a modal dialog MUST use this to
+   * close themselves: a Radix modal traps pointer events for the whole page, so
+   * the support panel would appear on top and yet be impossible to type into.
+   */
+  onBeforeOpen?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        onBeforeOpen?.();
+        openSupport();
+      }}
+      className={cn(
+        'inline-flex items-center gap-1 text-sm font-medium text-primary underline underline-offset-2',
+        className,
+      )}
+    >
+      <LifeBuoy className="h-3.5 w-3.5" aria-hidden />
+      Ask Saarthi about this
+    </button>
   );
 }

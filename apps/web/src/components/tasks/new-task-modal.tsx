@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PRIORITIES, DEFAULT_SLA_HOURS } from '@smartwork/shared';
 import { ApiError, api } from '@/lib/api';
+import { AskSaarthiButton } from '@/components/ui/states';
 import { useAuth } from '@/lib/auth';
 import { useI18n } from '@/i18n/provider';
 import { Modal } from '../ui/drawer';
@@ -31,7 +32,7 @@ export function NewTaskModal({
   const { t } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
-  const deptId = user?.departmentId ?? undefined;
+  const isAdmin = user?.role === 'ADMIN';
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -40,6 +41,17 @@ export function NewTaskModal({
   const [dueDate, setDueDate] = useState(defaultDue);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  // Managers only ever create work in their own department, so the field is
+  // implicit for them. An administrator raises work anywhere, and had no way to
+  // say where until this existed.
+  const [deptChoice, setDeptChoice] = useState('');
+  const deptId = (isAdmin ? deptChoice : '') || user?.departmentId || undefined;
+
+  const departments = useQuery({
+    queryKey: ['departments'],
+    queryFn: () => api.departments(),
+    enabled: isAdmin && open,
+  });
 
   // The assignee picker shows each person's CURRENT LOAD, so a manager does not
   // pile another file onto whoever is already drowning.
@@ -48,6 +60,12 @@ export function NewTaskModal({
     queryFn: () => api.workload(deptId),
     enabled: !!deptId && open,
   });
+
+  // A stale assignee from the previous department would fail server-side
+  // validation with a confusing message.
+  useEffect(() => {
+    setAssigneeId('');
+  }, [deptId]);
 
   const sorted = useMemo(
     () => [...(workload.data?.items ?? [])].sort((a, b) => a.activeLoad - b.activeLoad),
@@ -89,6 +107,7 @@ export function NewTaskModal({
     setDueDate(defaultDue());
     setErrors({});
     setFormError(null);
+    setDeptChoice('');
   }
 
   const valid = title.trim().length >= 5 && description.trim().length > 0 && assigneeId;
@@ -134,6 +153,22 @@ export function NewTaskModal({
             placeholder="What exactly must be done, and what evidence should be attached?"
           />
         </Field>
+
+        {isAdmin ? (
+          <Field label="Department" htmlFor="task-dept" required>
+            <Select
+              id="task-dept"
+              value={deptChoice || user?.departmentId || ''}
+              onChange={(e) => setDeptChoice(e.target.value)}
+            >
+              {(departments.data?.items ?? []).map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
@@ -211,9 +246,15 @@ export function NewTaskModal({
         </div>
 
         {formError ? (
-          <p role="alert" className="rounded-btn bg-danger-soft px-3 py-2 text-sm text-danger">
-            {formError}
-          </p>
+          <div role="alert" className="rounded-btn bg-danger-soft px-3 py-2 text-sm text-danger">
+            <p>{formError}</p>
+            {/* The failure was already captured by the API client, so this
+                hands Saarthi the real error rather than a retyped summary. */}
+            <AskSaarthiButton
+              className="mt-1.5 text-danger"
+              onBeforeOpen={() => onOpenChange(false)}
+            />
+          </div>
         ) : null}
       </div>
     </Modal>

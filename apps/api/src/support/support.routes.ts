@@ -19,8 +19,11 @@ const chatSchema = z.object({
   conversationId: z.string().optional(),
   lang: z.enum(['en', 'hi']).default('en'),
   currentRoute: z.string().max(200).default('/'),
-  correlationId: z.string().max(64).optional(),
-  pastedError: z.string().max(8000).optional(),
+  // .nullish(): the panel sends null when nothing is attached, which is the
+  // common case. Accepting only `undefined` here made every question asked
+  // without an attached error fail validation with a 422.
+  correlationId: z.string().max(64).nullish(),
+  pastedError: z.string().max(8000).nullish(),
 });
 
 /**

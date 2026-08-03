@@ -3,22 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { Role } from '@smartwork/shared';
-import {
-  AlertTriangle,
-  BarChart3,
-  Building2,
-  ClipboardList,
-  FileBarChart,
-  Gauge,
-  HeartPulse,
-  KanbanSquare,
-  LayoutDashboard,
-  MessageSquareText,
-  ScanSearch,
-  Settings,
-  ShieldCheck,
-  Trophy,
-} from 'lucide-react';
+import { AlertTriangle, BarChart3, Building2, ClipboardList, FileBarChart, Gauge, HeartPulse, KanbanSquare, LayoutDashboard, MessageSquareText, ScanSearch, Settings, ShieldCheck, Trophy, Bot } from 'lucide-react';
 import { useI18n } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 
@@ -56,6 +41,7 @@ const NAV: Record<Role, { section: 'employee' | 'manager' | 'admin'; items: NavI
       { href: '/a/directory', labelKey: 'departments', icon: Building2 },
       { href: '/a/fraud', labelKey: 'fraudCenter', icon: ScanSearch },
       { href: '/a/audit', labelKey: 'auditExplorer', icon: ShieldCheck },
+      { href: '/a/fixes', labelKey: 'aiFixLog', icon: Bot },
       { href: '/a/reports', labelKey: 'reports', icon: FileBarChart },
       { href: '/a/settings', labelKey: 'settings', icon: Settings },
     ],

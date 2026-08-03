@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Keyboard, MessageSquareText, RotateCcw, X } from 'lucide-react';
+import { Keyboard, LifeBuoy, MessageSquareText, RotateCcw, X } from 'lucide-react';
 import { useI18n } from '@/i18n/provider';
 import { useAuth } from '@/lib/auth';
 import { useReducedMotion } from '@/lib/motion';
@@ -13,6 +13,9 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SaarthiFace } from './SaarthiFace';
 import { useGuide } from './GuideProvider';
+import { SupportDock } from '@/components/support/SupportDock';
+import { closeSupport, openSupport, subscribeToSupportDock } from '@/lib/support-dock';
+import type { CapturedError } from '@/lib/error-capture';
 import { TOUR_TARGETS } from './tours/targets';
 
 const COPY = {
@@ -22,6 +25,7 @@ const COPY = {
     restart: 'Restart tour',
     resume: 'Resume tour',
     ask: 'Ask Saarthi',
+    support: 'Report a problem / Ask for help',
     keys: 'Keyboard shortcuts',
     keysTitle: 'Keyboard shortcuts',
     close: 'Close',
@@ -41,6 +45,7 @@ const COPY = {
     restart: 'टूर फिर से शुरू करें',
     resume: 'टूर जारी रखें',
     ask: 'सारथी से पूछें',
+    support: 'समस्या बताएँ / मदद माँगें',
     keys: 'कीबोर्ड शॉर्टकट',
     keysTitle: 'कीबोर्ड शॉर्टकट',
     close: 'बंद करें',
@@ -64,6 +69,14 @@ export function HelpLauncher() {
   const { start, progress, canResume, isRunning } = useGuide();
   const reduced = useReducedMotion();
   const router = useRouter();
+  const [support, setSupport] = useState<{ open: boolean; seedError: CapturedError | null }>({
+    open: false,
+    seedError: null,
+  });
+
+  // The panel lives here because the launcher is already mounted on every
+  // authenticated page; anything else on the page opens it through the store.
+  useEffect(() => subscribeToSupportDock(setSupport), []);
 
   const [keysOpen, setKeysOpen] = useState(false);
   const [showResume, setShowResume] = useState(false);
@@ -180,7 +193,18 @@ export function HelpLauncher() {
               </DropdownMenu.Item>
             ) : null}
 
-            {/* The chat assistant only exists on the employee surface. */}
+            {/* Support is for every role: reporting a broken screen is not a
+                privilege, and it is the reason people reach for help first. */}
+            <DropdownMenu.Item
+              className="flex cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm text-slate-700 outline-none data-[highlighted]:bg-primary-50 data-[highlighted]:text-primary"
+              onSelect={() => openSupport()}
+              data-tour="support-menu-item"
+            >
+              <LifeBuoy className="h-4 w-4" aria-hidden />
+              {t.support}
+            </DropdownMenu.Item>
+
+            {/* The task assistant only exists on the employee surface. */}
             {user.role === 'EMPLOYEE' ? (
               <DropdownMenu.Item
                 className="flex cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm text-slate-700 outline-none data-[highlighted]:bg-primary-50 data-[highlighted]:text-primary"
@@ -229,6 +253,12 @@ export function HelpLauncher() {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      <SupportDock
+        open={support.open}
+        seedError={support.seedError}
+        onClose={closeSupport}
+      />
     </>
   );
 }
