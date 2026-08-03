@@ -20,6 +20,16 @@ export interface StepMeta {
   role: Role;
   /** Final step — triggers the confetti burst. */
   finish?: boolean;
+  /**
+   * Mirrored from the Step so the ACTION path can navigate too.
+   *
+   * NextStep only performs `nextRoute` inside its own Next button handler, and
+   * its context exposes no equivalent method. An action step advances through
+   * `setCurrentStep`, which skips that handler — so a step with both an action
+   * and a nextRoute would move to the next index while leaving the user on the
+   * old page, pointing at a target that only exists on the new one.
+   */
+  nextRoute?: string;
 }
 
 const registry = new Map<string, StepMeta[]>();
@@ -68,6 +78,7 @@ export function buildTour(
       action: d.action,
       role,
       finish: d.finish,
+      nextRoute: d.nextRoute,
     })),
   );
 

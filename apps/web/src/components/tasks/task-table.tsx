@@ -42,6 +42,12 @@ export function TaskTable({
     );
   }
 
+  // The guided tour points at one row and then asks the user to open it, so the
+  // NEXT step's target — the progress box inside the drawer — must exist once
+  // they do. A completed task has no progress box, so anchoring to row 0 sent
+  // the tour to a dead end whenever finished work happened to sort first.
+  const tourRowId = tasks.find((t) => t.status !== 'COMPLETED')?.id ?? tasks[0]?.id;
+
   return (
     <div className="thin-scroll overflow-x-auto">
       <table className="w-full min-w-[860px] border-collapse text-left">
@@ -72,10 +78,10 @@ export function TaskTable({
           </tr>
         </thead>
         <tbody>
-          {tasks.map((task, rowIndex) => (
+          {tasks.map((task) => (
             <tr
               key={task.id}
-              {...(rowIndex === 0 ? { 'data-tour': 'task-row' } : {})}
+              {...(task.id === tourRowId ? { 'data-tour': 'task-row' } : {})}
               className={cn(
                 'border-b border-borderx last:border-0 hover:bg-slate-50',
                 task.isOverdue && 'bg-danger-soft/30',

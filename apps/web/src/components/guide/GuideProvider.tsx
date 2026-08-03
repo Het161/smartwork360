@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { NextStep, NextStepProvider, useNextStep } from 'nextstepjs';
 import { useNextAdapter } from 'nextstepjs/adapters/next';
 import type { Step } from 'nextstepjs';
@@ -22,6 +23,7 @@ import { useReducedMotion } from '@/lib/motion';
 import { SaarthiCard } from './SaarthiCard';
 import { useTourProgress, type TourProgress } from './useTourProgress';
 import { TOUR_EVENTS, type TourEventName } from './tours/targets';
+import { getStepMeta } from './tours/shared';
 import { adminTour } from './tours/admin';
 import { managerTour } from './tours/manager';
 import { employeeTour } from './tours/employee';
@@ -84,6 +86,8 @@ function GuideController({ children }: { children: React.ReactNode }) {
     isNextStepVisible,
   } = useNextStep();
 
+  const router = useRouter();
+
   const { progress, hydrated, save, reset, shouldOfferWelcome, canResume } = useTourProgress(
     user?.id,
     role,
@@ -130,20 +134,45 @@ function GuideController({ children }: { children: React.ReactNode }) {
    */
   const stepRef = useRef(currentStep);
   stepRef.current = currentStep;
+  const tourRef = useRef(currentTour);
+  tourRef.current = currentTour;
+  /** Guards against two events in the same beat advancing twice. */
+  const advancingRef = useRef(false);
 
   useEffect(() => {
     if (!isNextStepVisible) return;
 
-    const advance = () => {
+    const advance = (event: Event) => {
+      const meta = getStepMeta(tourRef.current, stepRef.current);
+      // Only the event THIS step is waiting for may advance it. Listening to
+      // every tour event meant one user action that emits two of them — adding
+      // progress also refreshes the task — skipped a step and left the tour on
+      // a page two hops ahead.
+      if (!meta?.action || meta.action !== event.type) return;
+      if (advancingRef.current) return;
+      advancingRef.current = true;
+
       // A beat so the user sees the result of their own action before the
       // spotlight moves on.
-      window.setTimeout(() => setCurrentStep(stepRef.current + 1), 650);
+      window.setTimeout(() => {
+        advancingRef.current = false;
+        const from = stepRef.current;
+        // Navigate first if this step crosses a page. NextStep only handles
+        // `nextRoute` inside its own Next button, which an action step never
+        // presses — without this the tour advances to a step whose target is
+        // on a page the user is not on, and sits there pointing at nothing.
+        const route = getStepMeta(tourRef.current, from)?.nextRoute;
+        if (route && route !== window.location.pathname) {
+          router.push(route);
+        }
+        setCurrentStep(from + 1);
+      }, 650);
     };
 
     const names = Object.values(TOUR_EVENTS) as TourEventName[];
     names.forEach((name) => window.addEventListener(name, advance));
     return () => names.forEach((name) => window.removeEventListener(name, advance));
-  }, [isNextStepVisible, setCurrentStep]);
+  }, [isNextStepVisible, setCurrentStep, router]);
 
   const markWelcomeSeen = useCallback(
     (started: boolean) => {
