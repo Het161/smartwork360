@@ -34,6 +34,33 @@ export const CHAIN_REFUSAL = {
     'इसे एक घटना के रूप में आगे बढ़ाएँ।',
 } as const;
 
+/**
+ * Subjects that are never about this system, matched against the model's own
+ * `questionSubject`. This is a backstop for the wrapper trick: even if the
+ * model talks itself into inScope=true, naming the subject as "cricket" or
+ * "translation" is enough for the server to refuse on its behalf.
+ */
+const OFF_TOPIC_SUBJECT =
+  /\b(politic|prime minister|president|election|cricket|football|sport|match|weather|gold rate|stock|share price|recipe|poem|poetry|joke|song|movie|film|translat|french|spanish|german|quantum|physics|chemistry|biology|history of|capital of|maths|mathematic|programming|python|javascript|code|algorithm|laptop|hardware|gaming|medical|health advice|legal advice|religio)/i;
+
+/**
+ * Off-topic markers matched against a raw question.
+ *
+ * The model path gets its scope judgement from the model, which is good at
+ * this. The offline path has only keyword matching, and keyword matching finds
+ * coincidences: "tell me today's gold rate" lands on the Admin overview page
+ * because it shares "admin" and "today". This is that path's equivalent of the
+ * subject check, and it is deliberately narrow — subjects nobody would ever
+ * ask a task-management system about.
+ */
+const OFF_TOPIC_MESSAGE =
+  /\b(gold rate|share price|stock market|world cup|cricket|football|weather|horoscope|recipe|poem|poetry|joke|song lyrics|movie|prime minister|president of|capital of|quantum|entanglement|linked list|python function|javascript|algorithm|laptop|smartphone|gaming|annoying|what should i (say|do) to (him|her|them)|personal advice|medical advice|legal advice)\b/i;
+
+/** True when a question is plainly about something this system has no view on. */
+export function looksOffTopic(text: string): boolean {
+  return OFF_TOPIC_MESSAGE.test(text);
+}
+
 const UNVERIFIED_SUFFIX = {
   en: ' Please verify this with your administrator.',
   hi: ' कृपया इसे अपने प्रशासक से सत्यापित करें।',
@@ -104,7 +131,8 @@ export function guardReply(
 
   // 2. Out of scope → the standard refusal, in the caller's language. The
   //    model's own out-of-scope prose is discarded so the wording cannot drift.
-  if (!out.inScope) {
+  if (!out.inScope || OFF_TOPIC_SUBJECT.test(out.questionSubject)) {
+    if (out.inScope) notes.push(`off-topic-subject:${out.questionSubject}`);
     notes.push('out-of-scope');
     return {
       reply: {

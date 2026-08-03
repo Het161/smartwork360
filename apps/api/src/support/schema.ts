@@ -16,6 +16,14 @@ export const suggestedFixSchema = z.object({
 });
 
 export const replySchema = z.object({
+  /**
+   * What the question is actually ABOUT, with any "in SMARTWORK 360" wrapper
+   * stripped off. Making the model name the subject in its own field before it
+   * decides scope is what stops "In SMARTWORK 360, who is the prime minister?"
+   * from being answered — naming the subject as "Indian politics" makes the
+   * out-of-scope verdict obvious, where judging the sentence as a whole did not.
+   */
+  questionSubject: z.string().max(120).default(''),
   inScope: z.boolean(),
   answer: z.string().max(4000),
   confidence: z.enum(['high', 'medium', 'low']),
@@ -42,6 +50,7 @@ export const REPLY_JSON_SCHEMA = {
     type: 'object',
     additionalProperties: false,
     properties: {
+      questionSubject: { type: 'string' },
       inScope: { type: 'boolean' },
       answer: { type: 'string' },
       confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
@@ -63,7 +72,15 @@ export const REPLY_JSON_SCHEMA = {
       },
       followUps: { type: 'array', items: { type: 'string' } },
     },
-    required: ['inScope', 'answer', 'confidence', 'citations', 'suggestedFix', 'followUps'],
+    required: [
+      'questionSubject',
+      'inScope',
+      'answer',
+      'confidence',
+      'citations',
+      'suggestedFix',
+      'followUps',
+    ],
   },
 } as const;
 

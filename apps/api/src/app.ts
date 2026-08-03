@@ -6,7 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import { configErrors, isAllowedOrigin, isServerless } from './config/env';
 import { countDocumentedRoutes, swaggerSpec } from './config/swagger';
 import { buildApiRouter } from './routes';
-import { errorHandler, notFoundHandler } from './middleware/errors';
+import { correlationId, errorHandler, notFoundHandler } from './middleware/errors';
 
 export function createApp(): Application {
   const app = express();
@@ -63,6 +63,8 @@ export function createApp(): Application {
     });
   });
 
+  // Before the router so every failure below carries a traceable id.
+  app.use('/api/v1', correlationId);
   app.use('/api/v1', buildApiRouter());
 
   app.use(notFoundHandler);

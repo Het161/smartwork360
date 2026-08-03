@@ -12,6 +12,7 @@ import { chatRouter } from './modules/chat/chat.routes';
 import { notificationRouter } from './modules/notifications/notification.routes';
 import { reportRouter } from './modules/reports/report.routes';
 import { jobsRouter } from './modules/jobs/jobs.routes';
+import { supportRouter } from './support/support.routes';
 
 /** Everything is mounted under /api/v1. */
 export function buildApiRouter(): Router {
@@ -30,6 +31,7 @@ export function buildApiRouter(): Router {
   api.use('/notifications', notificationRouter);
   api.use('/reports', reportRouter);
   api.use('/jobs', jobsRouter);
+  api.use('/support', supportRouter);
 
   return api;
 }

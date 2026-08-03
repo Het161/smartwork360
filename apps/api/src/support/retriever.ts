@@ -17,6 +17,8 @@ export interface RetrievedChunk {
   errorCode: string | null;
   fixAction: string | null;
   rank: number;
+  /** Distinct discriminating query terms present in this document. */
+  coverage?: number;
 }
 
 /**
@@ -129,6 +131,69 @@ export async function retrieve(
 }
 
 /**
+ * Best-matching document of a given kind, with a coverage count.
+ *
+ * Shared by both offline lookups. Features need exactly the same discipline as
+ * errors: without it, "write a python function to reverse a linked list" scores
+ * over the rank floor against the my-tasks page (they share "function",
+ * "list", "reverse") and gets answered.
+ */
+async function matchDocument(
+  text: string,
+  kind: 'ERROR' | 'FEATURE_OR_POLICY',
+): Promise<RetrievedChunk[]> {
+  const { df, docs } = await docFrequencies();
+  const cutoff = Math.max(2, Math.ceil(docs * 0.4));
+  const all = await lexemes(text);
+  const rare = all.filter((l) => (df.get(l) ?? 0) <= cutoff);
+  const chosen = rare.length > 0 ? rare : all;
+  const query = chosen.map((l) => `${l}:*`).join(' | ');
+  if (!query) return [];
+
+  const kindFilter = kind === 'ERROR' ? `kind = 'ERROR'` : `kind <> 'ERROR'`;
+  // The "document" is the source markdown file: everything before the '#'.
+  const best = await prisma.$queryRawUnsafe<{ doc: string }[]>(
+    `SELECT split_part(slug, '#', 1) AS doc,
+            sum(ts_rank_cd(tsv, to_tsquery('english', $1)))::float8 AS score,
+            max(ts_rank_cd(tsv, to_tsquery('english', $1)))::float8 AS peak
+       FROM smartwork.kb_chunks
+      WHERE ${kindFilter} AND tsv @@ to_tsquery('english', $1)
+      GROUP BY split_part(slug, '#', 1)
+      ORDER BY score DESC, peak DESC
+      LIMIT 1`,
+    query,
+  );
+  if (best.length === 0) return [];
+  const doc = best[0].doc;
+
+  const cov = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
+    `SELECT count(DISTINCT w.word) AS n
+       FROM smartwork.kb_chunks k,
+            LATERAL unnest(tsvector_to_array(k.tsv)) AS w(word)
+      WHERE split_part(k.slug, '#', 1) = $1 AND w.word = ANY($2::text[])`,
+    doc,
+    chosen,
+  );
+  const coverage = Number(cov[0]?.n ?? 0);
+
+  const rows = await prisma.$queryRawUnsafe<RetrievedChunk[]>(
+    `SELECT slug, kind::text, title, section, body, "errorCode", "fixAction",
+            ts_rank_cd(tsv, to_tsquery('english', $2))::float8 AS rank
+       FROM smartwork.kb_chunks
+      WHERE split_part(slug, '#', 1) = $1
+      ORDER BY rank DESC`,
+    doc,
+    query,
+  );
+  return rows.map((r) => ({ ...r, coverage }));
+}
+
+/** Best-matching feature or policy document, for the offline path. */
+export function matchFeature(text: string): Promise<RetrievedChunk[]> {
+  return matchDocument(text, 'FEATURE_OR_POLICY');
+}
+
+/**
  * Best-matching ERROR document for a piece of text. Used by the offline
  * fallback, which has no model to reason with and must match deterministically.
  */
@@ -174,14 +239,34 @@ export async function matchError(text: string): Promise<RetrievedChunk[]> {
     query,
   );
   if (best.length === 0) return [];
+  const winner = best[0].errorCode;
 
-  return prisma.$queryRawUnsafe<RetrievedChunk[]>(
+  // How many DISTINCT discriminating terms this document actually contains.
+  //
+  // Rank alone cannot separate a real report from a coincidence: "tell me
+  // today's gold RATE" scores 4.2 against RATE_LIMITED, higher than a genuine
+  // "cannot create a critical task" scores against its own document (0.8),
+  // because rank rewards repetition. Counting distinct matched terms does
+  // separate them — the gold-rate query shares exactly one word with that
+  // document, a real report shares several.
+  const cov = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
+    `SELECT count(DISTINCT w.word) AS n
+       FROM smartwork.kb_chunks k,
+            LATERAL unnest(tsvector_to_array(k.tsv)) AS w(word)
+      WHERE k."errorCode" = $1 AND w.word = ANY($2::text[])`,
+    winner,
+    chosen,
+  );
+  const coverage = Number(cov[0]?.n ?? 0);
+
+  const rows = await prisma.$queryRawUnsafe<RetrievedChunk[]>(
     `SELECT slug, kind::text, title, section, body, "errorCode", "fixAction",
             ts_rank_cd(tsv, to_tsquery('english', $2))::float8 AS rank
        FROM smartwork.kb_chunks
       WHERE "errorCode" = $1
       ORDER BY rank DESC`,
-    best[0].errorCode,
+    winner,
     query,
   );
+  return rows.map((r) => ({ ...r, coverage }));
 }
