@@ -1,5 +1,5 @@
 ---
-keywords: "approval approve release administrator waiting admitted"
+keywords: "approval approve release administrator waiting admitted स्वीकृति प्रतीक्षा प्रशासक लॉगिन नहीं"
 code: "USER_PENDING_APPROVAL"
 httpStatus: 403
 roles: [ADMIN]

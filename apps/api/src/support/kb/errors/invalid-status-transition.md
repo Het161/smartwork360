@@ -1,5 +1,5 @@
 ---
-keywords: "transition drag kanban snapped backwards skipped stuck"
+keywords: "transition drag kanban snapped backwards skipped stuck स्थिति बदल नहीं सकते कार्ड वापस अटका"
 code: "INVALID_STATUS_TRANSITION"
 httpStatus: 400
 roles: [ADMIN, MANAGER, EMPLOYEE]

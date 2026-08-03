@@ -1,4 +1,5 @@
 ---
+keywords: "today focus my counters due today what should i do next डैशबोर्ड आज का फोकस मेरे आँकड़े"
 title: "Employee dashboard"
 route: "/e/dashboard"
 roles: [EMPLOYEE]

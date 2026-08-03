@@ -1,4 +1,5 @@
 ---
+keywords: "kanban drag columns move card create task assign कार्य बोर्ड कानबन खींचें कॉलम नया कार्य"
 title: "Task board"
 route: "/m/board"
 roles: [MANAGER]

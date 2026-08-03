@@ -178,3 +178,18 @@ Every non-obvious engineering decision, with one line of reasoning. Newest phase
 | S.12 | Only the event a step is waiting for may advance it | The listener fired on *any* tour event, so one user action that emits two of them skipped a step entirely — adding progress landed the tour two pages ahead. It now compares the event to the current step's declared action, with a re-entrancy guard for two events in the same beat. |
 | S.13 | The employee tour anchors to the first **open** task, not the first row | The tour says "open any task", then points at the progress box inside the drawer. A completed task has no progress box, so whenever finished work sorted first the tour walked the user into a dead end. |
 | S.14 | The browser test now asserts the URL, not just the step index | This is why the bug shipped: the existing test checked that the action advanced the tour (STEP 6 OF 8) and never checked which page the user was on. A tour that advances to a step it cannot show is exactly the failure an index-only assertion cannot see. |
+
+## Fix — the assistant refused ordinary questions
+
+Reported from a live run: "hi", "give me an introduction of this app" and "how
+to use this app" all came back with the scope refusal.
+
+| # | Decision | Reasoning |
+|---|---|---|
+| P.17 | "Unmatched" and "off-topic" are now different answers | The offline path had one reply for both. Telling somebody who asked *how do I use this app* that you only answer questions about this app is wrong and reads as insulting. Off-topic still gets the scope refusal; a question about this system that simply did not match anything gets "I don't have that specific answer, here is what I can help with". |
+| P.18 | Greetings are answered, never matched | "hi" is not a query to look up. It is handled before retrieval on both paths, and the guard cannot turn it into a refusal. |
+| P.19 | The knowledge base had no page about the product itself | Twenty documents described individual screens and not one answered "what is this". Nothing could match the most obvious first question a person asks. Added `features/overview.md`. |
+| P.20 | Error catalogue vs screen documentation is decided by question type, not by score | The two matchers are not on a common scale — "my dashboard is empty" needs the error document despite the feature document scoring higher. An explicit code always wins; otherwise a symptom or an imperative ("approve…", "reassign…") routes to the error catalogue and everything else to the screen documentation. |
+| P.21 | Markdown is stripped and extracts are budgeted by length | These documents are written to be read as markdown, but this path puts them straight into a chat bubble where `**bold**` arrives as literal asterisks. Extracts now take whole sentences up to a character budget rather than a fixed count, so a numbered procedure survives intact. |
+| P.22 | Hindi needed stopwords and its own relevance floor | The index uses Postgres's `english` configuration, which has no notion of Hindi: "इस" and "का" survived as lexemes and prefix-matched half the corpus, letting the task board win "इस ऐप का परिचय दीजिए" with a term coverage of zero. And because the documents are English, a Hindi question can only match the short Hindi keyword block, so it earns a fraction of the rank — judging it by the English floor made the assistant quietly far less useful in Hindi than in English, which for a bilingual system is not a small thing. |
+| P.23 | When the offline path can only quote English, it says so | Without a model to translate, it labels the extract rather than presenting English prose as though it were an answer in Hindi. The model path answers Hindi natively; this is the honest degradation. |

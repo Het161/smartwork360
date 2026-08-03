@@ -16,7 +16,15 @@
  */
 import { matchError, matchFeature, type RetrievedChunk } from './retriever';
 import type { SupportReply, SuggestedFix } from './schema';
-import { REFUSAL, CHAIN_REFUSAL, isChainRepairRequest, looksOffTopic } from './scope.guard';
+import {
+  REFUSAL,
+  CHAIN_REFUSAL,
+  NO_MATCH,
+  GREETING,
+  isChainRepairRequest,
+  isGreeting,
+  looksOffTopic,
+} from './scope.guard';
 import { rolesAllowedFor } from './remediation/registry';
 import type { Role } from '@smartwork/shared';
 
@@ -40,17 +48,110 @@ const MIN_COVERAGE = 2;
 const MIN_FEATURE_RANK = 2.0;
 const MIN_FEATURE_COVERAGE = 1;
 
+/**
+ * Devanagari questions score structurally lower and need their own floors.
+ *
+ * The documents are written in English; a Hindi question can only match the
+ * short Hindi keyword block, so it earns a fraction of the rank an equivalent
+ * English question does. Judging both by the English floor silently made the
+ * assistant far less useful in Hindi than in English — which, for a system
+ * whose whole interface is bilingual, is not a small thing.
+ */
+const HAS_DEVANAGARI = /[\u0900-\u097F]/;
+const MIN_FEATURE_RANK_HI = 0.8;
+
 function section(chunks: RetrievedChunk[], name: string): string | null {
   const hit = chunks.find((c) => c.section.toLowerCase() === name.toLowerCase());
-  return hit ? hit.body.replace(/\s+/g, ' ').trim() : null;
+  return hit ? clean(hit.body) : null;
 }
 
-function firstSentences(text: string, count: number): string {
-  return text
-    .split(/(?<=[.!?])\s+/)
-    .filter(Boolean)
-    .slice(0, count)
-    .join(' ');
+/**
+ * Markdown out, prose in.
+ *
+ * These documents are written for humans to read as markdown, but this path
+ * puts them straight into a chat bubble, where `**bold**` and `- ` arrive as
+ * literal punctuation. Numbered steps keep their numbers because losing them
+ * makes an ordered procedure unreadable.
+ */
+function clean(md: string): string {
+  return md
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^\s*[-*]\s+/gm, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * A readable extract: whole sentences up to a length budget, rather than a
+ * fixed sentence count. A numbered procedure has short sentences and needs
+ * several; a definition needs one or two.
+ */
+function summarise(text: string, maxChars = 340): string {
+  // Not a plain "split on full stop": a numbered step ends "…dashboard. 2." and
+  // splitting there strands the bare numeral at the end of the extract.
+  const parts = clean(text)
+    .split(/(?<=[.!?])\s+(?!\d+\.)/)
+    .filter(Boolean);
+  const out: string[] = [];
+  let len = 0;
+  for (const part of parts) {
+    if (out.length && len + part.length > maxChars) break;
+    out.push(part);
+    len += part.length + 1;
+  }
+  // A numbered step reads "…like. 3. Work through…", so the last kept part can
+  // end on the numeral that introduces the step we dropped. Trim that orphan.
+  return out.join(' ').replace(/\s*\d+\.$/, '').trim();
+}
+
+/** "Tell me about this thing" rather than "why did this specific thing happen". */
+function isBroadQuestion(text: string): boolean {
+  return /\b(introduction|introduce|overview|about (this|the)|what is (this|smartwork)|what does this (app|system)|how (do i|to) use|get(ting)? started|begin|basics|summary|purpose|explain the (app|system)|what can you do)\b/i.test(
+    text,
+  );
+}
+
+/**
+ * Reads as a report of something going wrong, rather than a request to explain
+ * how something works. This is what decides between the error catalogue and the
+ * screen documentation — rank cannot, because the two matchers score on
+ * different scales ("my dashboard is empty" needs the error document despite
+ * the feature document scoring higher).
+ */
+function looksLikeProblem(text: string): boolean {
+  const symptom =
+    /\b(error|errors|failed|failing|fails|fail|cannot|can'?t|could ?n'?t|won'?t|not working|does ?n'?t work|broken|stuck|refused|rejected|blocked|denied|forbidden|empty|blank|missing|expired|locked|timed out|springs? back|snap(s|ped)? back|why (did|does|can'?t|is)|no longer)\b/i;
+  // An imperative asking the system to DO something is an action request, not a
+  // request to explain a screen — and the error catalogue is what carries the
+  // remediation, including who is allowed to run it.
+  const imperative =
+    /\b(approve|reassign|reopen|resend|re-?send|assign|unlock|repair|reset|recompute|clear|fix)\b/i;
+  return symptom.test(text) || imperative.test(text);
+}
+
+/**
+ * Which section of a document to answer from.
+ *
+ * A broad question wants the document's opening definition; anything else wants
+ * whichever section actually matched. Demoting "Common confusions" outright was
+ * wrong — for "why can I not mark my own task complete" that section IS the
+ * answer.
+ */
+function pickChunk(chunks: RetrievedChunk[], broad: boolean): RetrievedChunk | undefined {
+  const best = chunks[0];
+  if (!best) return undefined;
+  // Only override when the best match is the FAQ AND the question was broad —
+  // "give me an introduction" was being answered with two FAQ entries. For
+  // "how do I get started" the best match IS the right section, and for a
+  // specific question the FAQ is often exactly the answer.
+  const isFaq = /^common confusions$/i.test(best.section);
+  if (!broad || !isFaq) return best;
+  return (
+    [...chunks].sort(
+      (a, b) => Number(a.slug.split('#')[1] ?? 0) - Number(b.slug.split('#')[1] ?? 0),
+    )[0] ?? best
+  );
 }
 
 /**
@@ -131,6 +232,7 @@ export async function answerOffline(input: {
     };
   }
 
+  /** The subject is not ours. */
   const refuse = (): SupportReply => ({
     questionSubject: '',
     inScope: false,
@@ -142,17 +244,68 @@ export async function answerOffline(input: {
     offline: true,
   });
 
+  /**
+   * The subject IS ours, but nothing matched well enough to answer from.
+   * Kept distinct from `refuse` — "I don't have that" and "that's not my
+   * subject" are different answers and must not share wording.
+   */
+  const noMatch = (): SupportReply => ({
+    questionSubject: 'smartwork 360 (general)',
+    inScope: true,
+    answer: hi ? NO_MATCH.hi : NO_MATCH.en,
+    confidence: 'low',
+    citations: [],
+    suggestedFix: null,
+    followUps: [],
+    offline: true,
+  });
+
+  // A greeting is not a question to look up. Answering "hi" with a scope
+  // refusal is the rudest possible opening.
+  if (isGreeting(input.message)) {
+    return {
+      questionSubject: 'greeting',
+      inScope: true,
+      answer: hi ? GREETING.hi : GREETING.en,
+      confidence: 'high',
+      citations: [],
+      suggestedFix: null,
+      followUps: [],
+      offline: true,
+    };
+  }
+
   // Refuse plainly off-topic questions before any matching runs. Without this
   // the keyword search finds a coincidence for almost anything.
   if (looksOffTopic(input.message)) return refuse();
 
-  // ---- error documents -------------------------------------------------
-  const errChunks = await matchError(`${input.message} ${input.errorCode ?? ''}`);
+  // ---- gather both candidates, then decide ----------------------------
+  const [errChunks, featChunks] = await Promise.all([
+    matchError(`${input.message} ${input.errorCode ?? ''}`),
+    matchFeature(input.message),
+  ]);
+
   const top: RetrievedChunk | undefined = errChunks[0];
   const codeMatchesExactly = Boolean(input.errorCode && top?.errorCode === input.errorCode);
-  const strong = !!top && top.rank >= MIN_RANK && (top.coverage ?? 0) >= MIN_COVERAGE;
+  const errorUsable = !!top && top.rank >= MIN_RANK && (top.coverage ?? 0) >= MIN_COVERAGE;
 
-  if (top?.errorCode && (codeMatchesExactly || strong)) {
+  const broad = isBroadQuestion(input.message);
+  const featTop = pickChunk(featChunks, broad);
+  const devanagari = HAS_DEVANAGARI.test(input.message);
+  const featureFloor = devanagari ? MIN_FEATURE_RANK_HI : MIN_FEATURE_RANK;
+  const featureUsable =
+    !!featTop && featTop.rank >= featureFloor && (featTop.coverage ?? 0) >= MIN_FEATURE_COVERAGE;
+
+  /*
+   * An explicit code always wins. Otherwise the error catalogue answers reports
+   * of things going wrong, and the screen documentation answers requests to
+   * explain how something works. Preferring by score does not work: the two
+   * matchers are not on a common scale.
+   */
+  const preferError =
+    codeMatchesExactly || (errorUsable && (looksLikeProblem(input.message) || !featureUsable));
+
+  if (top?.errorCode && preferError) {
     const why = section(errChunks, 'Why');
     const todo = section(errChunks, 'What to do');
     const fixAction = errChunks.find((c) => c.fixAction)?.fixAction ?? null;
@@ -175,7 +328,7 @@ export async function answerOffline(input: {
       }
     }
 
-    let answer = [why ? firstSentences(why, 2) : null, todo ? firstSentences(todo, 2) : null]
+    let answer = [why ? summarise(why, 260) : null, todo ? summarise(todo, 260) : null]
       .filter(Boolean)
       .join(' ');
 
@@ -185,16 +338,20 @@ export async function answerOffline(input: {
       const roles = rolesAllowedFor(fixAction);
       if (roles.length && !roles.includes(input.role as Role)) {
         const who = roles.join(' or ').toLowerCase();
+        const whoEn = who
+          .replace(/\badmin\b/g, 'an administrator')
+          .replace(/\bmanager\b/g, 'a manager')
+          .replace(/\bemployee\b/g, 'an employee');
         answer += hi
-          ? ` यह बदलाव केवल ${who === 'admin' ? 'प्रशासक' : who} कर सकते हैं।`
-          : ` Only ${who === 'admin' ? 'an administrator' : `a ${who}`} can make that change.`;
+          ? ` यह बदलाव केवल ${who.includes('admin') ? 'प्रशासक' : 'प्रबंधक'} कर सकते हैं।`
+          : ` Only ${whoEn} can make that change.`;
       }
     }
 
     return {
       questionSubject: top.errorCode,
       inScope: true,
-      answer: answer || firstSentences(top.body.replace(/\s+/g, ' ').trim(), 3),
+      answer: answer || summarise(top.body),
       confidence: codeMatchesExactly ? 'high' : 'medium',
       citations: errChunks.slice(0, 3).map((c) => c.slug),
       suggestedFix,
@@ -204,18 +361,26 @@ export async function answerOffline(input: {
   }
 
   // ---- feature documents ----------------------------------------------
-  const feat = await matchFeature(input.message);
-  const best = feat[0];
-  if (!best || best.rank < MIN_FEATURE_RANK || (best.coverage ?? 0) < MIN_FEATURE_COVERAGE) {
-    return refuse();
+  if (!featureUsable || !featTop) {
+    // Not off-topic (that was checked above), just unmatched.
+    return noMatch();
   }
+  const best = featTop;
+
+  const extract = summarise(best.body);
+  // Say so rather than pretending. Without a model to translate, this path can
+  // only quote the documentation it has, and that documentation is English.
+  const needsNote = hi && !HAS_DEVANAGARI.test(extract);
 
   return {
     questionSubject: best.title,
     inScope: true,
-    answer: firstSentences(best.body.replace(/\s+/g, ' ').trim(), 3),
+    answer: needsNote ? `(यह जानकारी अंग्रेज़ी में उपलब्ध है)\n${extract}` : extract,
     confidence: 'medium',
-    citations: feat.slice(0, 3).map((c) => c.slug),
+    citations: [
+      best.slug,
+      ...featChunks.slice(0, 2).map((c) => c.slug).filter((x) => x !== best.slug),
+    ],
     suggestedFix: null,
     followUps: [],
     offline: true,

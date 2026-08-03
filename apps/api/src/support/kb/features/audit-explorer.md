@@ -1,4 +1,5 @@
 ---
+keywords: "audit chain verify hash blocks tamper evident ledger prove ऑडिट श्रृंखला सत्यापन ब्लॉक हैश छेड़छाड़ प्रमाण"
 title: "Audit explorer"
 route: "/a/audit"
 roles: [ADMIN]

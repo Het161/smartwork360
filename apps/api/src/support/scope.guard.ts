@@ -54,12 +54,52 @@ const OFF_TOPIC_SUBJECT =
  * ask a task-management system about.
  */
 const OFF_TOPIC_MESSAGE =
-  /\b(gold rate|share price|stock market|world cup|cricket|football|weather|horoscope|recipe|poem|poetry|joke|song lyrics|movie|prime minister|president of|capital of|quantum|entanglement|linked list|python function|javascript|algorithm|laptop|smartphone|gaming|annoying|what should i (say|do) to (him|her|them)|personal advice|medical advice|legal advice)\b/i;
+  /\b(gold rate|share price|stock market|world cup|cricket|football|weather|horoscope|recipe|poem|poetry|joke|song lyrics|movie|translate|translation|in french|in spanish|in german|prime minister|president of|capital of|quantum|entanglement|linked list|python function|javascript|algorithm|laptop|smartphone|gaming|annoying|what should i (say|do) to (him|her|them)|personal advice|medical advice|legal advice)\b/i;
 
 /** True when a question is plainly about something this system has no view on. */
 export function looksOffTopic(text: string): boolean {
   return OFF_TOPIC_MESSAGE.test(text);
 }
+
+/** A greeting, rather than a question. */
+export function isGreeting(text: string): boolean {
+  return /^\s*(hi|hey|hello+|yo|namaste|namaskar|hii+|good (morning|afternoon|evening)|नमस्ते|नमस्कार|हाय)[\s!.,?]*$/i.test(
+    text.trim(),
+  );
+}
+
+/**
+ * Said when the question IS about this system but nothing in the knowledge base
+ * matched it well enough to answer from.
+ *
+ * Deliberately not the scope refusal. Telling somebody who asked "how do I use
+ * this app?" that you only answer questions about this app is both wrong and
+ * insulting — "I don't have that" and "that's not my subject" are different
+ * answers and must read differently.
+ */
+export const NO_MATCH = {
+  en:
+    "I don't have a specific answer for that one. I can help with tasks and deadlines, " +
+    'dashboards, approvals and reviews, alerts, burnout and morale, the fraud centre, ' +
+    'the audit chain, and anything that has gone wrong on screen — try asking about one ' +
+    'of those, or paste the error you are seeing.',
+  hi:
+    'इसका सटीक उत्तर मेरे पास नहीं है। मैं कार्य और समय-सीमा, डैशबोर्ड, स्वीकृति और समीक्षा, ' +
+    'अलर्ट, बर्नआउट और मनोबल, फ़्रॉड सेंटर, ऑडिट श्रृंखला, और स्क्रीन पर आई किसी भी त्रुटि में ' +
+    'मदद कर सकता हूँ — इनमें से कुछ पूछिए, या जो त्रुटि दिख रही है उसे चिपका दीजिए।',
+} as const;
+
+/** Opening line for a greeting — friendly, and immediately useful. */
+export const GREETING = {
+  en:
+    "Namaste. I'm Saarthi, the built-in help for SMARTWORK 360. Ask me how any screen " +
+    'works, why something was refused, or paste an error and I will explain it — and fix ' +
+    'it where I safely can.',
+  hi:
+    'नमस्ते। मैं सारथी हूँ, SMARTWORK 360 की अंतर्निहित सहायता। किसी भी स्क्रीन के बारे में ' +
+    'पूछिए, कुछ अस्वीकार क्यों हुआ यह जानिए, या त्रुटि चिपकाइए — मैं समझाऊँगा, और जहाँ ' +
+    'सुरक्षित हो वहाँ ठीक भी कर दूँगा।',
+} as const;
 
 const UNVERIFIED_SUFFIX = {
   en: ' Please verify this with your administrator.',
@@ -129,7 +169,22 @@ export function guardReply(
     };
   }
 
-  // 2. Out of scope → the standard refusal, in the caller's language. The
+  // 2. A greeting is answered, never refused — whatever the model decided.
+  if (isGreeting(userMessage)) {
+    notes.push('greeting');
+    return {
+      reply: {
+        ...out,
+        inScope: true,
+        answer: out.inScope && out.answer.trim() ? out.answer : opts.lang === 'hi' ? GREETING.hi : GREETING.en,
+        confidence: 'high',
+        suggestedFix: null,
+      },
+      notes,
+    };
+  }
+
+  // 3. Out of scope → the standard refusal, in the caller's language. The
   //    model's own out-of-scope prose is discarded so the wording cannot drift.
   if (!out.inScope || OFF_TOPIC_SUBJECT.test(out.questionSubject)) {
     if (out.inScope) notes.push(`off-topic-subject:${out.questionSubject}`);
@@ -147,7 +202,7 @@ export function guardReply(
     };
   }
 
-  // 3. A confident answer that cites nothing is an answer from memory rather
+  // 4. A confident answer that cites nothing is an answer from memory rather
   //    than from the knowledge base. Keep it, but stop presenting it as certain.
   if (out.confidence === 'high' && out.citations.length === 0) {
     notes.push('uncited-high-confidence-downgraded');
@@ -155,7 +210,7 @@ export function guardReply(
     out.answer += opts.lang === 'hi' ? UNVERIFIED_SUFFIX.hi : UNVERIFIED_SUFFIX.en;
   }
 
-  // 4. A fix naming an action that does not exist is dropped — the answer
+  // 5. A fix naming an action that does not exist is dropped — the answer
   //    survives, the invented capability does not.
   if (out.suggestedFix) {
     if (!opts.autofixEnabled) {

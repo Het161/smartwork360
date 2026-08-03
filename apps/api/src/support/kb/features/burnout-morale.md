@@ -1,4 +1,5 @@
 ---
+keywords: "burnout score measure strain five signals what does it mean calculated बर्नआउट मनोबल तनाव स्कोर मापता संकेत"
 title: "Burnout & morale"
 route: "/m/burnout"
 roles: [MANAGER]

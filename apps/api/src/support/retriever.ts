@@ -78,6 +78,21 @@ function toQuery(text: string): string {
   return terms.map((t) => `${t}:*`).join(' | ');
 }
 
+/**
+ * Hindi function words.
+ *
+ * The index uses Postgres's `english` configuration, which has no notion of
+ * Hindi — so "इस", "का" and friends survive as full lexemes and then
+ * prefix-match half the corpus. "इस ऐप का परिचय दीजिए" was won by the task
+ * board on that noise alone, with a term coverage of zero.
+ */
+const HINDI_STOP = new Set([
+  'इस', 'इसका', 'इसे', 'यह', 'वह', 'का', 'की', 'के', 'को', 'में', 'से', 'पर',
+  'और', 'है', 'हैं', 'हूँ', 'था', 'थी', 'थे', 'कर', 'करें', 'दीजिए', 'कृपया',
+  'मुझे', 'मेरा', 'मेरी', 'मेरे', 'आप', 'क्या', 'कैसे', 'क्यों', 'कब', 'कहाँ',
+  'नहीं', 'हो', 'गया', 'लिए', 'साथ', 'एक', 'भी', 'तो',
+]);
+
 const STOP = new Set([
   'the', 'and', 'for', 'was', 'are', 'has', 'have', 'this', 'that', 'with', 'you', 'your',
   'why', 'how', 'what', 'when', 'not', 'can', 'cannot', 'does', 'did', 'but', 'from',
@@ -145,7 +160,7 @@ async function matchDocument(
   const { df, docs } = await docFrequencies();
   const cutoff = Math.max(2, Math.ceil(docs * 0.4));
   const all = await lexemes(text);
-  const rare = all.filter((l) => (df.get(l) ?? 0) <= cutoff);
+  const rare = all.filter((l) => !HINDI_STOP.has(l) && (df.get(l) ?? 0) <= cutoff);
   const chosen = rare.length > 0 ? rare : all;
   const query = chosen.map((l) => `${l}:*`).join(' | ');
   if (!query) return [];
@@ -215,7 +230,7 @@ export async function matchError(text: string): Promise<RetrievedChunk[]> {
   const { df, docs } = await docFrequencies();
   const cutoff = Math.max(2, Math.ceil(docs * 0.4));
   const all = await lexemes(text);
-  const rare = all.filter((l) => (df.get(l) ?? 0) <= cutoff);
+  const rare = all.filter((l) => !HINDI_STOP.has(l) && (df.get(l) ?? 0) <= cutoff);
   // If every term was common, fall back to the full set rather than matching
   // nothing — a weak ranking still beats no answer.
   const chosen = rare.length > 0 ? rare : all;

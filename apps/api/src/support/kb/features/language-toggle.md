@@ -1,4 +1,5 @@
 ---
+keywords: "hindi english switch language change interface bilingual हिंदी अंग्रेज़ी भाषा बदलें टॉगल"
 title: "Language toggle"
 route: "(top bar)"
 roles: [ADMIN, MANAGER, EMPLOYEE]

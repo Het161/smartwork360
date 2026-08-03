@@ -1,4 +1,5 @@
 ---
+keywords: "tour walkthrough guide restart saarthi help two minute टूर मार्गदर्शन सारथी दोबारा शुरू"
 title: "Guided tours (Saarthi)"
 route: "(help button)"
 roles: [ADMIN, MANAGER, EMPLOYEE]

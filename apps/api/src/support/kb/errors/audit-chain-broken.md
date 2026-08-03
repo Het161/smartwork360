@@ -1,5 +1,5 @@
 ---
-keywords: "tamper mismatch integrity chain broken verification"
+keywords: "tamper mismatch integrity chain broken verification श्रृंखला टूटी सत्यापन विफल छेड़छाड़"
 code: "AUDIT_CHAIN_BROKEN"
 httpStatus: 500
 roles: [ADMIN]
