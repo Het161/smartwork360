@@ -10,19 +10,35 @@ import {
 import { prisma } from '../../db/prisma';
 import { appendEvent } from '../../audit/audit.service';
 import { diffFields, hasChanges } from '../../audit/diff';
-import { badRequest, notFound } from '../../middleware/errors';
+import { badRequest, notFound, HttpError } from '../../middleware/errors';
 import type { AccessTokenPayload } from '../../auth/jwt';
 import { assertCanAccessTask } from '../../middleware/scope';
 import { LEXICON_MODEL_VERSION, scoreSentiment } from '../../ml/lexicon';
 import { scoreSentimentBatch } from '../../ml/client';
 import { taskDetailInclude, taskInclude } from './task.mapper';
 
-/** SLA hours for a department+priority, falling back to the global default. */
+/**
+ * SLA hours for a department+priority.
+ *
+ * Refuses rather than falling back to a hidden global default. A deadline is
+ * the thing every SLA figure in this system is measured against, so quietly
+ * inventing one produces reports that look precise and mean nothing. If a
+ * department has no rule for a priority, that is a configuration gap for a
+ * human to close — and the error carries the ids needed to close it.
+ */
 export async function resolveSlaHours(departmentId: string, priority: Priority): Promise<number> {
   const policy = await prisma.sLAPolicy.findUnique({
     where: { departmentId_priority: { departmentId, priority } },
   });
-  return policy?.hours ?? DEFAULT_SLA_HOURS[priority];
+  if (!policy) {
+    throw new HttpError(
+      400,
+      `There is no ${priority.toLowerCase()} deadline rule for this department, so the due date cannot be worked out.`,
+      'SLA_POLICY_MISSING',
+      { departmentId, priority, defaultHours: DEFAULT_SLA_HOURS[priority] },
+    );
+  }
+  return policy.hours;
 }
 
 /** Reference numbers look like REV/2026/0042 and are unique per department+year. */
@@ -47,7 +63,15 @@ export async function createTask(input: CreateTaskInput, actor: AccessTokenPaylo
   if (!department) throw notFound('Department not found');
 
   const assignee = await prisma.user.findUnique({ where: { id: input.assigneeId } });
-  if (!assignee || !assignee.active) throw badRequest('Assignee not found or inactive');
+  if (!assignee) throw badRequest('Assignee not found');
+  if (!assignee.active) {
+    throw new HttpError(
+      409,
+      `${assignee.name}'s account is not active, so work cannot be assigned to them.`,
+      'TASK_ASSIGNEE_INACTIVE',
+      { taskId: null, assigneeId: assignee.id, departmentId: input.departmentId },
+    );
+  }
   if (assignee.departmentId !== input.departmentId) {
     throw badRequest(`${assignee.name} does not belong to the ${department.name} department`);
   }
@@ -185,7 +209,16 @@ export async function changeStatus(
 
   if (existing.status === to) throw badRequest(`Task is already ${to}`);
   if (!canTransition(existing.status, to)) {
-    throw badRequest(`Cannot move a task from ${existing.status} to ${to}`);
+    // Carries its documented code and the ids, so the support assistant can
+    // both explain it and offer the repair without anything being retyped.
+    throw new HttpError(
+      400,
+      `A task cannot move from ${existing.status.toLowerCase().replace(/_/g, ' ')} to ${to
+        .toLowerCase()
+        .replace(/_/g, ' ')}.`,
+      'INVALID_STATUS_TRANSITION',
+      { taskId, from: existing.status, to },
+    );
   }
 
   // Maker-checker: only a manager or admin signs off the final approval, and never

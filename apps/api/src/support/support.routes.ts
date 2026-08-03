@@ -8,6 +8,8 @@ import { currentUser, requireAuth, requireRole } from '../middleware/auth';
 import { validateBody, body } from '../middleware/validate';
 import { ask } from './support.service';
 import { reindexKb } from './kb.indexer';
+import { applyFix, undoFix } from './remediation/executor';
+import { actionsForRole, REGISTRY } from './remediation/registry';
 
 export const supportRouter = Router();
 supportRouter.use(requireAuth);
@@ -163,5 +165,139 @@ supportRouter.post(
   requireRole('ADMIN'),
   asyncHandler(async (_req, res) => {
     res.json(await reindexKb());
+  }),
+);
+
+const applySchema = z.object({ reason: z.string().max(500).optional() });
+
+/**
+ * @openapi
+ * /support/fixes/{id}/apply:
+ *   post:
+ *     tags: [Support]
+ *     summary: Apply a fix the assistant proposed
+ *     description: >
+ *       Executes one whitelisted remediation. The model never reaches this code —
+ *       it only named an action and supplied arguments, both of which are
+ *       re-validated here, along with the caller's role and department taken from
+ *       their token rather than from the conversation. The change and its audit
+ *       event share a single transaction. Medium-risk actions require a reason.
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string } }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason: { type: string, description: "required for medium-risk actions" }
+ *     responses:
+ *       200: { description: Applied, with an undo window and the audit block index }
+ *       400: { description: Already applied, invalid arguments, or rate limited }
+ *       403: { description: Your role or department does not permit it }
+ */
+supportRouter.post(
+  '/fixes/:id/apply',
+  validateBody(applySchema),
+  asyncHandler(async (req, res) => {
+    const me = currentUser(req);
+    const { reason } = body<z.infer<typeof applySchema>>(req);
+    res.json(await applyFix({ fixId: req.params.id, actor: me, reason }));
+  }),
+);
+
+/**
+ * @openapi
+ * /support/fixes/{id}/undo:
+ *   post:
+ *     tags: [Support]
+ *     summary: Reverse a fix within its undo window
+ *     description: The undo is itself written to the audit chain — the ledger keeps both events.
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string } }
+ *     responses:
+ *       200: { description: Reversed }
+ *       400: { description: Not undoable, or the window has passed }
+ */
+supportRouter.post(
+  '/fixes/:id/undo',
+  asyncHandler(async (req, res) => {
+    const me = currentUser(req);
+    res.json(await undoFix({ fixId: req.params.id, actor: me }));
+  }),
+);
+
+/**
+ * @openapi
+ * /support/fixes:
+ *   get:
+ *     tags: [Support]
+ *     summary: Every AI-applied fix (Admin audit view)
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: query, name: status, schema: { type: string, enum: [PROPOSED, APPLIED, FAILED, UNDONE] } }
+ *       - { in: query, name: action, schema: { type: string } }
+ *     responses:
+ *       200: { description: Fixes, newest first }
+ *       403: { description: Administrators only }
+ */
+supportRouter.get(
+  '/fixes',
+  requireRole('ADMIN'),
+  asyncHandler(async (req, res) => {
+    const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+    const action = typeof req.query.action === 'string' ? req.query.action : undefined;
+
+    const items = await prisma.supportFix.findMany({
+      where: {
+        ...(status ? { status: status as never } : {}),
+        ...(action ? { action } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      include: { actor: { select: { id: true, name: true, role: true } } },
+    });
+
+    res.json({
+      items: items.map((f) => ({
+        id: f.id,
+        action: f.action,
+        args: f.args,
+        risk: f.risk,
+        status: f.status,
+        actor: f.actor,
+        result: f.result,
+        reason: f.reason,
+        createdAt: f.createdAt.toISOString(),
+        appliedAt: f.appliedAt?.toISOString() ?? null,
+        undoneAt: f.undoneAt?.toISOString() ?? null,
+      })),
+    });
+  }),
+);
+
+/**
+ * @openapi
+ * /support/actions:
+ *   get:
+ *     tags: [Support]
+ *     summary: The remediation actions available to your role
+ *     description: The complete, closed set. Anything not listed here does not exist.
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Actions with their risk tier }
+ */
+supportRouter.get(
+  '/actions',
+  asyncHandler(async (req, res) => {
+    const me = currentUser(req);
+    res.json({
+      items: actionsForRole(me.role).map((a) => ({
+        ...a,
+        risk: REGISTRY.get(a.name)?.risk ?? 'low',
+      })),
+    });
   }),
 );

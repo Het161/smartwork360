@@ -965,6 +965,100 @@ async function main() {
 
   console.log(`  ✓ ${linked.length} audit blocks, ${anchors.length} Merkle checkpoints`);
 
+
+  /* ------------------------------------------ support-bot demo scenarios */
+  // Reproducible broken states, so "Ask Saarthi about this" has something real
+  // to diagnose on a fresh seed. Each one maps to a documented error code and,
+  // where safe, to a whitelisted remediation.
+
+  // DEMO 1 (headline) — Health has no CRITICAL deadline rule, so creating a
+  // critical task there fails with SLA_POLICY_MISSING. Removed AFTER the tasks
+  // are generated, so the existing Health history stays intact and only NEW
+  // critical tasks hit the gap.
+  const healthDept = deptByCode.get('HLT');
+  if (healthDept) {
+    await prisma.sLAPolicy.deleteMany({
+      where: { departmentId: healthDept.id, priority: 'CRITICAL' },
+    });
+  }
+
+  // DEMO 2 — an account nobody assigned to a department. Every screen comes
+  // back empty for her, which is USER_NO_DEPARTMENT.
+  await prisma.user.create({
+    data: {
+      id: 'usr_nikita_rao',
+      name: 'Nikita Rao',
+      email: 'nikita.rao@gov.in',
+      passwordHash,
+      role: 'EMPLOYEE',
+      designation: 'Junior Assistant',
+      departmentId: null,
+      avatarSeed: 'nikita-rao',
+      status: 'ACTIVE',
+      emailVerified: true,
+      createdAt: daysAgo(9),
+    },
+  });
+
+  // DEMO 3 — the two onboarding gates, one account stuck at each.
+  await prisma.user.createMany({
+    data: [
+      {
+        id: 'usr_pending_approval',
+        name: 'Arjun Deshpande',
+        email: 'arjun.deshpande@gov.in',
+        passwordHash,
+        role: 'EMPLOYEE',
+        designation: 'Assistant Engineer',
+        departmentId: deptByCode.get('PWD')?.id ?? null,
+        avatarSeed: 'arjun-deshpande',
+        status: 'PENDING_APPROVAL',
+        emailVerified: true,
+        createdAt: daysAgo(2),
+      },
+      {
+        id: 'usr_pending_verify',
+        name: 'Sunita Kale',
+        email: 'sunita.kale@gov.in',
+        passwordHash,
+        role: 'EMPLOYEE',
+        designation: 'Clerk',
+        departmentId: deptByCode.get('REV')?.id ?? null,
+        avatarSeed: 'sunita-kale',
+        status: 'PENDING_VERIFICATION',
+        emailVerified: false,
+        createdAt: daysAgo(1),
+      },
+    ],
+  });
+
+  // DEMO 4 — a task sitting in review with nothing ever submitted for review.
+  // Dragging it anywhere raises INVALID_STATUS_TRANSITION.
+  const strandedTask = await prisma.task.findFirst({
+    where: { status: 'PENDING', department: { code: 'PWD' } },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (strandedTask) {
+    await prisma.task.update({
+      where: { id: strandedTask.id },
+      data: { status: 'UNDER_REVIEW', startedAt: null },
+    });
+  }
+
+  // DEMO 5 — twelve progress notes written while the analysis service was
+  // down, so they carry no sentiment and the morale average is computed over
+  // fewer notes than it should be (ML_SERVICE_UNAVAILABLE).
+  const orphanIds = (
+    await prisma.sentimentRecord.findMany({
+      select: { id: true },
+      orderBy: { createdAt: 'desc' },
+      take: 12,
+    })
+  ).map((r) => r.id);
+  await prisma.sentimentRecord.deleteMany({ where: { id: { in: orphanIds } } });
+
+  console.log('  ✓ 5 support-bot failure scenarios planted');
+
   /* ------------------------------------------------------------- summary */
 
   console.log('\n  Demo accounts — password for all: ' + DEMO_PASSWORD);
@@ -974,7 +1068,14 @@ async function main() {
   console.log(`\n  Planted for the demo:`);
   console.log(`    burnout   ${rameshEntry.spec.name} (PWD)`);
   console.log(`    fraud     ${vikasEntry.spec.name} (REV)`);
-  console.log(`    SLA story Health department, week 6 breach cluster\n`);
+  console.log(`    SLA story Health department, week 6 breach cluster`);
+  console.log(`\n  Broken on purpose, for Saarthi Support:`);
+  console.log(`    SLA_POLICY_MISSING        create a CRITICAL task in Health`);
+  console.log(`    USER_NO_DEPARTMENT        nikita.rao@gov.in has no department`);
+  console.log(`    USER_PENDING_APPROVAL     arjun.deshpande@gov.in`);
+  console.log(`    EMAIL_NOT_VERIFIED        sunita.kale@gov.in`);
+  console.log(`    INVALID_STATUS_TRANSITION a PWD task stranded in review`);
+  console.log(`    ML_SERVICE_UNAVAILABLE    12 notes with no sentiment\n`);
 }
 
 /* ------------------------------------------------------------- scoring */
@@ -1012,6 +1113,11 @@ export function riskFrom(score: number): 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL
 /** Deletes in FK-safe order. Only touches SMARTWORK 360 tables. */
 async function wipe() {
   await prisma.emailOtp.deleteMany();
+  // Support tables first: fixes and conversations reference users, so leaving
+  // them behind makes the user wipe fail on a foreign key.
+  await prisma.supportFix.deleteMany();
+  await prisma.supportMessage.deleteMany();
+  await prisma.supportConversation.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.sentimentRecord.deleteMany();
   await prisma.burnoutScore.deleteMany();
