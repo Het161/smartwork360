@@ -4,7 +4,7 @@ import { NEUTRAL_BAND } from '@smartwork/shared';
 import { prisma } from '../../db/prisma';
 import { asyncHandler } from '../../middleware/errors';
 import { currentUser, requireAuth, requireRole } from '../../middleware/auth';
-import { resolveDepartmentId } from '../../middleware/scope';
+import { resolveDepartmentId, requireDepartmentId, NO_DEPARTMENT } from '../../middleware/scope';
 import { scoreSentimentBatch } from '../../ml/client';
 import { LEXICON_MODEL_VERSION, labelFor } from '../../ml/lexicon';
 
@@ -35,7 +35,9 @@ sentimentRouter.get(
   requireRole('ADMIN', 'MANAGER'),
   asyncHandler(async (req, res) => {
     const me = currentUser(req);
-    const departmentId = resolveDepartmentId(me, req.params.deptId) ?? me.departmentId;
+    const resolved = resolveDepartmentId(me, req.params.deptId);
+    const departmentId =
+      me.role === 'MANAGER' ? requireDepartmentId(me) : (resolved ?? me.departmentId ?? NO_DEPARTMENT);
     const days = Number(req.query.days ?? 14);
     const since = new Date(Date.now() - days * DAY);
 

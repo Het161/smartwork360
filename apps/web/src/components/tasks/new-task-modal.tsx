@@ -31,7 +31,7 @@ export function NewTaskModal({
   const { t } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
-  const deptId = user?.departmentId;
+  const deptId = user?.departmentId ?? undefined;
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

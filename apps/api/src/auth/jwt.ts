@@ -5,7 +5,8 @@ import { env } from '../config/env';
 export interface AccessTokenPayload {
   sub: string;
   role: Role;
-  departmentId: string;
+  /** null for accounts not yet assigned to a department (see USER_NO_DEPARTMENT). */
+  departmentId: string | null;
   name: string;
   /** Marks sessions established through the mock Parichay SSO screen. */
   via?: 'password' | 'parichay';

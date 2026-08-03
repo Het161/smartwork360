@@ -5,7 +5,7 @@ import type { z } from 'zod';
 import { asyncHandler, forbidden } from '../../middleware/errors';
 import { currentUser, requireAuth } from '../../middleware/auth';
 import { query, validateQuery } from '../../middleware/validate';
-import { resolveDepartmentId, taskScope } from '../../middleware/scope';
+import { resolveDepartmentId, taskScope, requireDepartmentId } from '../../middleware/scope';
 import { computeKpis, computeSla, computeTrends, computeWorkload } from './analytics.service';
 
 export const analyticsRouter = Router();
@@ -28,7 +28,12 @@ function whereForScope(
   }
   if (q.scope === 'dept') {
     if (me.role === 'EMPLOYEE') throw forbidden('Department analytics require a MANAGER role');
-    const departmentId = resolveDepartmentId(me, q.departmentId) ?? me.departmentId;
+    // resolveDepartmentId still rejects a cross-department request; the manager
+    // branch then insists on a real id, because an undefined departmentId drops
+    // the filter entirely and would show them every department.
+    const resolved = resolveDepartmentId(me, q.departmentId);
+    const departmentId =
+      me.role === 'MANAGER' ? requireDepartmentId(me) : (resolved ?? me.departmentId ?? undefined);
     return { where: { departmentId }, scope: 'dept' };
   }
   return { where: { assigneeId: me.sub }, scope: 'me' };

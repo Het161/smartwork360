@@ -18,7 +18,8 @@ export interface BurnoutResult {
 export interface AnomalyRow {
   userId: string;
   userName: string;
-  departmentId: string;
+  /** null for accounts not yet assigned to a department. */
+  departmentId: string | null;
   actionsPerHour: number;
   nightHourRatio: number;
   selfApprovalCount: number;

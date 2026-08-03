@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../../db/prisma';
 import { asyncHandler, forbidden, notFound } from '../../middleware/errors';
 import { currentUser, requireAuth, requireRole } from '../../middleware/auth';
-import { assertCanAccessDepartment, resolveDepartmentId } from '../../middleware/scope';
+import { assertCanAccessDepartment, resolveDepartmentId, requireDepartmentId } from '../../middleware/scope';
 import { readBurnout, recomputeBurnout } from './burnout.service';
 
 export const burnoutRouter = Router();
@@ -29,7 +29,9 @@ burnoutRouter.get(
   requireRole('ADMIN', 'MANAGER'),
   asyncHandler(async (req, res) => {
     const me = currentUser(req);
-    const departmentId = resolveDepartmentId(me, req.params.deptId) ?? me.departmentId;
+    const resolved = resolveDepartmentId(me, req.params.deptId);
+    const departmentId =
+      me.role === 'MANAGER' ? requireDepartmentId(me) : (resolved ?? me.departmentId ?? undefined);
     res.json({ items: await readBurnout(departmentId) });
   }),
 );
@@ -91,7 +93,7 @@ burnoutRouter.post(
   asyncHandler(async (req, res) => {
     const me = currentUser(req);
     const departmentId =
-      me.role === 'ADMIN' ? (req.body?.departmentId as string | undefined) : me.departmentId;
+      me.role === 'ADMIN' ? (req.body?.departmentId as string | undefined) : requireDepartmentId(me);
     const result = await recomputeBurnout(departmentId);
     res.json({ scored: result.scored, mode: result.mode });
   }),

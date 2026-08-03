@@ -4,6 +4,7 @@ import { createApp } from './app';
 import { countDocumentedRoutes } from './config/swagger';
 import { startSlaCron, stopSlaCron } from './jobs/sla.cron';
 import { initMailer } from './mail/mailer.service';
+import { ensureKbIndexed } from './support/kb.indexer';
 
 const app = createApp();
 
@@ -13,6 +14,7 @@ const server = app.listen(env.PORT, () => {
   logger.info(`${countDocumentedRoutes()} documented REST endpoints`);
   startSlaCron();
   void initMailer();
+  void ensureKbIndexed();
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

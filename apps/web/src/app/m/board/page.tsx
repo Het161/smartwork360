@@ -70,7 +70,7 @@ function Board() {
 
   const workload = useQuery({
     queryKey: ['workload', user?.departmentId],
-    queryFn: () => api.workload(user?.departmentId),
+    queryFn: () => api.workload(user?.departmentId ?? undefined),
     enabled: !!user?.departmentId,
   });
 
@@ -352,7 +352,7 @@ function BulkAssignModal({
 
   const workload = useQuery({
     queryKey: ['workload', user?.departmentId],
-    queryFn: () => api.workload(user?.departmentId),
+    queryFn: () => api.workload(user?.departmentId ?? undefined),
     enabled: !!user?.departmentId && open,
   });
 

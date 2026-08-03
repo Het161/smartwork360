@@ -20,7 +20,7 @@ import { formatHours } from '@/lib/charts';
 export default function ManagerDashboard() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const deptId = user?.departmentId;
+  const deptId = user?.departmentId ?? undefined;
 
   const kpis = useQuery({ queryKey: ['kpis', 'dept'], queryFn: () => api.kpis('dept') });
   const sla = useQuery({ queryKey: ['sla', 'dept'], queryFn: () => api.sla('dept') });

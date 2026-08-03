@@ -260,7 +260,7 @@ export async function verifyOtp(email: string, code: string) {
         data: admins.map((admin) => ({
           userId: admin.id,
           title: 'New registration awaiting approval',
-          body: `${updated.name} — ${updated.designation}, ${updated.department.name}`,
+          body: `${updated.name} — ${updated.designation}, ${updated.department?.name ?? 'no department'}`,
           link: '/a/directory?tab=pending',
         })),
       });
@@ -318,7 +318,7 @@ export async function approveUser(userId: string, actorId: string) {
   const mail = welcomeEmail({
     name: approved.name,
     designation: approved.designation,
-    department: approved.department.name,
+    department: approved.department?.name ?? 'Unassigned',
     signInUrl: `${env.APP_BASE_URL}/login`,
   });
   const sent = await sendMail({

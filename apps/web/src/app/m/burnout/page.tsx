@@ -36,7 +36,7 @@ export default function BurnoutPage() {
   const { t } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
-  const deptId = user?.departmentId;
+  const deptId = user?.departmentId ?? undefined;
   const [message, setMessage] = useState<string | null>(null);
 
   const burnout = useQuery({

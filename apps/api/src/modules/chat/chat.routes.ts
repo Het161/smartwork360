@@ -4,7 +4,7 @@ import { prisma } from '../../db/prisma';
 import { asyncHandler } from '../../middleware/errors';
 import { currentUser, requireAuth } from '../../middleware/auth';
 import { body, validateBody } from '../../middleware/validate';
-import { taskScope } from '../../middleware/scope';
+import { taskScope, NO_DEPARTMENT } from '../../middleware/scope';
 import { askAssistant } from '../../ml/client';
 import type { ChatContext } from '../../ml/types';
 import { computeKpis, startOfDay } from '../analytics/analytics.service';
@@ -73,7 +73,9 @@ chatRouter.post(
         me.role === 'EMPLOYEE' ? { assigneeId: me.sub } : { AND: [scope, {}] },
         me.role === 'EMPLOYEE' ? 'me' : 'dept',
       ),
-      prisma.department.findUnique({ where: { id: me.departmentId } }),
+      me.departmentId
+        ? prisma.department.findUnique({ where: { id: me.departmentId } })
+        : Promise.resolve(null),
       prisma.task.findMany({
         where: {
           AND: [
@@ -132,7 +134,10 @@ chatRouter.post(
             ],
           },
         }),
-        readBurnout(me.role === 'ADMIN' ? undefined : me.departmentId),
+        // NO_DEPARTMENT is a sentinel that matches no rows. Passing undefined
+        // here would mean "every department" — the opposite of what an
+        // unassigned user should see.
+        readBurnout(me.role === 'ADMIN' ? undefined : (me.departmentId ?? NO_DEPARTMENT)),
       ]);
       context.teamSize = teamSize;
       context.slaBreachesToday = breachesToday;

@@ -7,7 +7,7 @@ import { appendEvent } from '../../audit/audit.service';
 import { asyncHandler, badRequest, notFound } from '../../middleware/errors';
 import { currentUser, requireAuth, requireRole } from '../../middleware/auth';
 import { body, query, validateBody, validateQuery } from '../../middleware/validate';
-import { assertCanAccessDepartment, resolveDepartmentId } from '../../middleware/scope';
+import { assertCanAccessDepartment, resolveDepartmentId, requireDepartmentId } from '../../middleware/scope';
 import { computePrecision, runScan } from './fraud.service';
 
 export const fraudRouter = Router();
@@ -194,7 +194,7 @@ fraudRouter.post(
   asyncHandler(async (req, res) => {
     const me = currentUser(req);
     const departmentId =
-      me.role === 'ADMIN' ? (req.body?.departmentId as string | undefined) : me.departmentId;
+      me.role === 'ADMIN' ? (req.body?.departmentId as string | undefined) : requireDepartmentId(me);
     res.json(await runScan(me.sub, departmentId));
   }),
 );

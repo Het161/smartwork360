@@ -26,8 +26,8 @@ export interface UserDTO {
   email: string;
   role: Role;
   designation: string;
-  departmentId: string;
-  department?: DepartmentDTO;
+  departmentId: string | null;
+  department?: DepartmentDTO | null;
   avatarSeed: string;
   active: boolean;
   status: UserStatus;

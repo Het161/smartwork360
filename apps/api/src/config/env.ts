@@ -44,6 +44,33 @@ const envSchema = z.object({
   CRON_SECRET: z.string().optional(),
   APP_BASE_URL: z.string().default('http://localhost:3000'),
   SIGNUP_RATE_LIMIT_PER_HOUR: z.coerce.number().int().default(5),
+
+  /* --------------------------------------------------- saarthi support bot */
+  // Provider-neutral on purpose. The support bot talks to any OpenAI-compatible
+  // chat-completions endpoint, so switching between Groq, xAI or a local
+  // llama.cpp server is a base-URL and a model id — never a code change.
+  // XAI_* names are accepted as aliases so an xAI key drops in unchanged.
+  SUPPORT_LLM_API_KEY: z.string().default(''),
+  SUPPORT_LLM_BASE_URL: z.string().default('https://api.groq.com/openai/v1'),
+  /** Main reasoning model. MUST support response_format: json_schema. */
+  SUPPORT_LLM_MODEL: z.string().default('openai/gpt-oss-120b'),
+  /** Cheaper model for classification-shaped calls. */
+  SUPPORT_LLM_MODEL_FAST: z.string().default('llama-3.1-8b-instant'),
+  /** Dedicated prompt-injection classifier; empty disables that layer. */
+  SUPPORT_LLM_GUARD_MODEL: z.string().default('meta-llama/llama-prompt-guard-2-86m'),
+  /** Score above which text is treated as an injection attempt. */
+  SUPPORT_GUARD_THRESHOLD: z.coerce.number().default(0.8),
+  SUPPORT_LLM_TIMEOUT_MS: z.coerce.number().int().default(20_000),
+  SUPPORT_LLM_MAX_OUTPUT_TOKENS: z.coerce.number().int().default(700),
+  /** auto = call the model when a key exists; offline = never touch the network. */
+  SUPPORT_BOT_MODE: z.enum(['auto', 'offline']).default('auto'),
+  SUPPORT_AUTOFIX_ENABLED: z
+    .string()
+    .default('true')
+    .transform((v) => v !== 'false'),
+  SUPPORT_MAX_FIXES_PER_HOUR: z.coerce.number().int().default(5),
+  /** Minutes an applied fix stays reversible. */
+  SUPPORT_UNDO_WINDOW_MIN: z.coerce.number().int().default(15),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -83,6 +110,32 @@ if (!parsed.success) {
     configErrors.push(`${issue.path.join('.')}: ${issue.message}`);
   }
 }
+
+/**
+ * Resolved support-bot settings. The key falls back to the XAI_* alias so an
+ * xAI key works without editing anything but `.env`.
+ *
+ * `mode` is the honest answer to "will this call the network?": explicitly
+ * offline, or auto with no key, both resolve to offline. Every caller branches
+ * on this one value rather than re-deriving the rule.
+ */
+const supportKey = env.SUPPORT_LLM_API_KEY || process.env.XAI_API_KEY || '';
+export const supportConfig = {
+  apiKey: supportKey,
+  baseUrl: process.env.XAI_BASE_URL || env.SUPPORT_LLM_BASE_URL,
+  model: process.env.XAI_MODEL || env.SUPPORT_LLM_MODEL,
+  modelFast: process.env.XAI_MODEL_FAST || env.SUPPORT_LLM_MODEL_FAST,
+  guardModel: env.SUPPORT_LLM_GUARD_MODEL,
+  guardThreshold: env.SUPPORT_GUARD_THRESHOLD,
+  timeoutMs: env.SUPPORT_LLM_TIMEOUT_MS,
+  maxOutputTokens: env.SUPPORT_LLM_MAX_OUTPUT_TOKENS,
+  autofixEnabled: env.SUPPORT_AUTOFIX_ENABLED,
+  maxFixesPerHour: env.SUPPORT_MAX_FIXES_PER_HOUR,
+  undoWindowMin: env.SUPPORT_UNDO_WINDOW_MIN,
+  mode: (env.SUPPORT_BOT_MODE === 'offline' || !supportKey ? 'offline' : 'auto') as
+    | 'auto'
+    | 'offline',
+} as const;
 
 export const corsOrigins = env.CORS_ORIGIN.split(',')
   .map((o) => o.trim())
