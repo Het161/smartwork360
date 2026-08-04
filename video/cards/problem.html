@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMARTWORK 360 — the problem</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .stage { width: 1560px; }
+  h2 { font-size: 46px; font-weight: 600; line-height: 1.34; letter-spacing: -.012em; max-width: 1400px; }
+  h2 em { font-style: normal; color: rgba(255,255,255,.42); }
+  .levels { display: flex; gap: 26px; margin: 58px 0 46px; }
+  .lv {
+    flex: 1; padding: 32px 34px; border-radius: 20px;
+    background: rgba(255, 255, 255, .045);
+    border: 1px solid var(--line);
+    transition: background .5s ease, border-color .5s ease, transform .5s cubic-bezier(.22,.61,.36,1), box-shadow .5s ease;
+  }
+  .lv .n { font-size: 15px; font-weight: 700; letter-spacing: .18em; color: rgba(255,255,255,.36); }
+  .lv .t { font-size: 38px; font-weight: 600; margin-top: 12px; letter-spacing: -.015em; }
+  .lv .d { font-size: 21px; color: var(--muted); margin-top: 12px; line-height: 1.5; }
+  .lv.hot {
+    background: rgba(255, 153, 51, .13);
+    border-color: rgba(255, 153, 51, .5);
+    transform: translateY(-10px);
+    box-shadow: 0 22px 50px rgba(0,0,0,.3);
+  }
+  .lv.hot .n { color: var(--saffron); }
+  .tail { display: flex; align-items: center; gap: 30px; }
+  .tail p { font-size: 30px; color: var(--muted); }
+  .tail strong { color: #fff; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="label cue" id="c0" style="margin-bottom:24px">The problem statement</div>
+    <h2 class="cue" id="c1">
+      Government offices today have no single online tool to set goals, benchmark
+      success, and measure productivity at <em>three levels</em>.
+    </h2>
+
+    <div class="levels">
+      <div class="lv cue" id="l0"><div class="n">LEVEL 1</div><div class="t">Organisation</div><div class="d">Every department, compared side by side</div></div>
+      <div class="lv cue" id="l1"><div class="n">LEVEL 2</div><div class="t">Team</div><div class="d">One section, its load and its morale</div></div>
+      <div class="lv cue" id="l2"><div class="n">LEVEL 3</div><div class="t">Individual</div><div class="d">One officer, and only their own work</div></div>
+    </div>
+
+    <div class="tail">
+      <div class="rule cue" id="c2"></div>
+      <p class="cue" id="c3">Work is tracked on paper and through follow-up calls.
+        <strong>SMARTWORK 360 closes that gap.</strong></p>
+    </div>
+  </div>
+<script>
+  const on = id => document.getElementById(id)?.classList.add('on');
+  const hot = i => {
+    ['l0','l1','l2'].forEach(x => document.getElementById(x)?.classList.remove('hot'));
+    if (i >= 0) document.getElementById('l' + i)?.classList.add('hot');
+  };
+  // Sentence 1 names the three levels in order, so each cue lights one.
+  const steps = [
+    () => { on('c0'); on('c1'); on('l0'); on('l1'); on('l2'); },
+    () => hot(0),
+    () => hot(1),
+    () => hot(2),
+    () => { hot(-1); on('c2'); on('c3'); },
+  ];
+  window.__cue = (n) => steps[n]?.();
+  window.__cueCount = steps.length;
+</script>
+</body>
+</html>

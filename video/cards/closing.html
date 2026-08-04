@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMARTWORK 360 — closing</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .stage { width: 1420px; text-align: center; }
+  .mark {
+    width: 150px; height: 150px; margin: 0 auto 40px;
+    border-radius: 28px; background: rgba(255,255,255,.06);
+    border: 1px solid var(--line); display: grid; place-items: center;
+    box-shadow: 0 26px 60px rgba(0,0,0,.3);
+  }
+  .mark img { width: 94px; height: 94px; }
+  h2 { font-size: 54px; font-weight: 600; letter-spacing: -.02em; line-height: 1.28; }
+  h2 span { color: var(--saffron); }
+  .sub { margin-top: 26px; font-size: 27px; color: var(--muted); line-height: 1.5; }
+  .links {
+    margin-top: 52px; display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;
+  }
+  .link {
+    display: inline-flex; align-items: center; gap: 13px;
+    padding: 17px 28px; border-radius: 14px;
+    border: 1px solid var(--line); background: rgba(255,255,255,.05);
+    font-size: 23px; font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    color: rgba(255,255,255,.86);
+  }
+  .link .k {
+    font-family: 'Inter Card', sans-serif; font-size: 15px; font-weight: 600;
+    letter-spacing: .14em; color: rgba(255,255,255,.4);
+  }
+  .foot { margin-top: 54px; display: flex; justify-content: center; }
+  .thanks { margin-top: 40px; font-size: 30px; color: rgba(255,255,255,.5); }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="mark cue" id="c0"><img src="assets/mark-white.svg" alt=""></div>
+    <h2 class="cue" id="c1">
+      Goal setting, tracking and measurement in one place,<br>
+      at all three levels — with a record that <span>cannot be quietly changed</span>.
+    </h2>
+    <p class="sub cue" id="c2">
+      It is running today. We would welcome the opportunity<br>to demonstrate it in your office.
+    </p>
+    <div class="links">
+      <span class="link cue" id="c3"><span class="k">LIVE</span> smartwork360.vercel.app</span>
+      <span class="link cue" id="c4"><span class="k">SOURCE</span> github.com/Het161/smartwork360</span>
+    </div>
+    <div class="foot cue" id="c5">
+      <span class="chip"><span class="dot"></span> Prototype running today</span>
+    </div>
+    <p class="thanks cue" id="c6">Thank you.</p>
+  </div>
+<script>
+  const on = id => document.getElementById(id)?.classList.add('on');
+  const steps = [
+    () => { on('c0'); on('c1'); },
+    () => { on('c2'); setTimeout(() => { on('c3'); on('c4'); }, 500); },
+    () => { on('c5'); setTimeout(() => on('c6'), 380); },
+  ];
+  window.__cue = (n) => steps[n]?.();
+  window.__cueCount = steps.length;
+</script>
+</body>
+</html>

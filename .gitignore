@@ -31,3 +31,9 @@ npm-debug.log*
 apps/api/src/generated/
 # NOTE: apps/web/public/sw.js is hand-written and IS committed (see DECISIONS.md 0.8).
 .vercel
+
+# Playwright writes failure artifacts here at the repo root.
+test-results/
+
+# Scratch archives, not part of the project.
+_to_delete/

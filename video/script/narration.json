@@ -1,0 +1,739 @@
+{
+  "$comment": "SMARTWORK 360 — government demonstration video. Audio is authored FIRST; visuals are paced to the measured durations in `measured`. Never edit `measured` by hand — `npm run video:audio` writes it.",
+  "voice": {
+    "engine": "edge-tts",
+    "name": "en-IN-NeerjaNeural",
+    "rate": "-4%",
+    "volume": "+0%",
+    "pitch": "+0Hz",
+    "note": "edge-tts 5.0.0+ removed custom SSML. Use the --rate/--volume/--pitch flags only, never SSML tags."
+  },
+  "pacing": {
+    "sentenceGapMs": 420,
+    "sceneGapMs": 300,
+    "crossfadeMs": 400,
+    "note": "sentenceGapMs is silence inserted between sentences inside a scene. It is what lets a 38s narration fill a 55s scene without the delivery sounding rushed, and it gives the visuals room to land."
+  },
+  "scenes": [
+    {
+      "id": "scene-01",
+      "title": "Title",
+      "kind": "card",
+      "card": "title.html",
+      "targetSeconds": 12,
+      "sentences": [
+        "SMARTWORK 360.",
+        "A smart task and performance management system for government offices, built as a module on the e-Office platform.",
+        "This is a working prototype.",
+        "Everything you are about to see is running live."
+      ],
+      "notes": "Logo settles, wordmark fades, 'Working prototype · Live' chip appears last."
+    },
+    {
+      "id": "scene-02",
+      "title": "The problem",
+      "kind": "card",
+      "card": "problem.html",
+      "targetSeconds": 18,
+      "sentences": [
+        "Government offices today have no single online tool to set goals, benchmark success, and measure productivity at three levels — the organisation, the team, and the individual.",
+        "Work is tracked on paper and through follow-up calls.",
+        "SMARTWORK 360 closes that gap."
+      ],
+      "notes": "The three levels highlight in sequence, timed to the words organisation / team / individual in sentence 1."
+    },
+    {
+      "id": "scene-03",
+      "title": "Login and Parichay",
+      "kind": "app",
+      "route": "/login",
+      "targetSeconds": 22,
+      "sentences": [
+        "Officers sign in with their government email, or through Parichay single sign-on.",
+        "Parichay is shown here in sandbox mode, since live integration requires onboarding by the National Informatics Centre.",
+        "Every user lands on a dashboard shaped by their role."
+      ],
+      "notes": "login page -> Parichay sandbox screen (hold on the Sandbox mode pill) -> back -> employee chip -> /e/dashboard."
+    },
+    {
+      "id": "scene-04",
+      "title": "Employee — individual level",
+      "kind": "app",
+      "route": "/e/dashboard",
+      "targetSeconds": 55,
+      "sentences": [
+        "This is the individual level.",
+        "An employee sees only their own work — what is assigned, what is due today, what is overdue, and their on-time record for the month.",
+        "Opening a task shows its full history: who assigned it, the deadline, and every update made so far.",
+        "The employee records progress with a short note.",
+        "That update is saved immediately, and it is also written to the system's audit trail, which we will come to shortly."
+      ],
+      "notes": "Kavita Joshi. KPI row -> Today's Focus -> /e/tasks -> open task drawer -> timeline -> type update -> slider -> Submit -> Audit chain (N blocks) grows."
+    },
+    {
+      "id": "scene-05",
+      "title": "Employee assistant and performance",
+      "kind": "app",
+      "route": "/e/assistant",
+      "targetSeconds": 40,
+      "sentences": [
+        "Each employee has an assistant that answers from their live data, not from a manual.",
+        "Asking about pending work returns the actual task list.",
+        "The performance page shows the employee's own trend — tasks completed on time, and average time taken.",
+        "This is how the system measures productivity at the individual level."
+      ],
+      "notes": "Click the hardcoded saffron Hinglish chip 'mere pending kaam kitne hain?'. Hold on the 'intent: my_pending_tasks' label. Then /e/performance."
+    },
+    {
+      "id": "scene-06",
+      "title": "Manager — team level",
+      "kind": "app",
+      "route": "/m/dashboard",
+      "targetSeconds": 65,
+      "sentences": [
+        "At the team level, a manager sees the whole section at once.",
+        "SLA compliance shows how much work is finishing within its deadline.",
+        "The morale indicator reads the tone of written updates using a language model, giving an early signal that a team is under strain.",
+        "The burnout list identifies who is overloaded, with a suggested action.",
+        "Work moves through the board by dragging a card, and every movement is recorded.",
+        "Submitted work arrives in a review queue, where the manager approves it or sends it back with a note."
+      ],
+      "notes": "Anil Kulkarni (PWD) — NOT the Sunita Deshmukh login chip, Ramesh Patel lives in PWD. SLA ring -> morale gauge -> burnout list -> /m/burnout suggested action -> /m/board drag Pending->In Progress -> /m/reviews.",
+      "accuracyFlag": "Sentence 3 says 'using a language model'. Your README states the shipped morale method is a word/lexicon scorer that BEAT DistilBERT (87.5% vs 85.0%), and the model footer on this very card can read 'Lexicon (offline mode)'. See video/README.md — suggested replacement wording is there."
+    },
+    {
+      "id": "scene-07",
+      "title": "Manager analytics",
+      "kind": "app",
+      "route": "/m/analytics",
+      "targetSeconds": 35,
+      "sentences": [
+        "The analytics view answers the questions a supervising officer actually asks.",
+        "How much work is the section completing each week.",
+        "Which priorities are taking longest.",
+        "Where deadlines are being missed.",
+        "And whether workload and team morale are moving together."
+      ],
+      "notes": "Four charts, each scaled 1.15x in turn as its sentence lands: Weekly throughput / Avg cycle time by priority / SLA breaches by week / Sentiment vs task load. Recharts entry animations need ~1.8s to settle first."
+    },
+    {
+      "id": "scene-08",
+      "title": "Admin — organisation level",
+      "kind": "app",
+      "route": "/a/overview",
+      "targetSeconds": 50,
+      "sentences": [
+        "At the organisation level, the administrator compares departments side by side — open work, overdue work, deadline compliance, and staff wellbeing.",
+        "The heat map shows where delays cluster, week by week.",
+        "Departments and users are managed from a single screen, with roles that control exactly what each person can see."
+      ],
+      "notes": "Rajesh Iyer. Wait for the SECOND data wave — Morale and At-risk columns populate after the per-department fan-out, and recording early shows 0.00. Then heat map, then /a/directory."
+    },
+    {
+      "id": "scene-09",
+      "title": "Fraud and risk",
+      "kind": "app",
+      "route": "/a/fraud",
+      "targetSeconds": 45,
+      "sentences": [
+        "The system also watches for irregular activity.",
+        "An anomaly detection model flags unusual patterns — a burst of status changes at two in the morning, work approved by the same person who submitted it, or a task marked complete in four minutes.",
+        "Each alert opens with the underlying evidence, so an officer can judge it themselves.",
+        "The system raises the flag.",
+        "A human makes the decision."
+      ],
+      "notes": "Precision card -> anomaly scatter (night cluster) -> open the Vikas Meena self-approval row -> evidence panel, reason tags, raw JSON. Hold 1.5s on the evidence. Last two sentences land on a still frame of the evidence panel."
+    },
+    {
+      "id": "scene-10",
+      "title": "The audit trail",
+      "kind": "app",
+      "route": "/a/audit",
+      "targetSeconds": 75,
+      "sentences": [
+        "Every action in SMARTWORK 360 is recorded as a linked block.",
+        "Each block carries a fingerprint of the block before it, using the same cryptographic method as a blockchain.",
+        "Verifying the chain confirms that no past record has been altered.",
+        "Now we will attempt to alter one old record directly in the database, bypassing the application entirely.",
+        "The chain is checked again.",
+        "The tampering is detected, and the exact block where the record was changed is identified.",
+        "This is what tamper-evident means.",
+        "Records cannot be quietly edited after the fact.",
+        "Restoring the original data returns the chain to a verified state."
+      ],
+      "notes": "THE SHOWPIECE. verify (green, hold 2s) -> cut to terminal card (demo:tamper) -> back to app -> verify (red, hold 2s, block number scaled 1.15x) -> Show block #N in the ledger -> terminal card (demo:reset) -> verify (green, hold 2s). The page refetches every 30s and will flip red on its own — the recorder pauses that route so the button press is what causes the flip on camera."
+    },
+    {
+      "id": "scene-11",
+      "title": "Guided tours",
+      "kind": "app",
+      "route": "/a/overview",
+      "targetSeconds": 35,
+      "sentences": [
+        "Staff training is often the hardest part of introducing a new system.",
+        "Every role has a built-in guided tour that teaches by doing — the user performs the real action to move forward.",
+        "It runs in English and in Hindi, and it can be restarted at any time."
+      ],
+      "notes": "The one scene that deliberately lets the welcome modal appear. Start 2-min tour -> step through 2 steps -> land on the action step showing 'Try it yourself to continue' -> toggle हि on the card -> Skip tour."
+    },
+    {
+      "id": "scene-12",
+      "title": "Support assistant and self-repair",
+      "kind": "app",
+      "route": "/m/board",
+      "targetSeconds": 55,
+      "sentences": [
+        "When something goes wrong, the officer does not need to raise a ticket.",
+        "Here, creating a critical task fails.",
+        "The assistant reads the error, explains the cause in plain language — a missing deadline rule for that department — and offers to correct it.",
+        "The correction is applied, and the task now saves.",
+        "That repair is itself recorded on the audit trail.",
+        "And there is one thing the assistant will never do.",
+        "Asked to repair a broken audit chain, it refuses.",
+        "A broken chain is evidence, not a fault.",
+        "The system can heal itself, but it cannot touch the record."
+      ],
+      "notes": "MUST be recorded as ADMIN — the department field in the New task modal only renders for role ADMIN. Health + Critical has no SLA policy in the seed, so the 400 is genuine. Error banner -> Ask Saarthi about this -> attached error chip 'POST /tasks · 400 · SLA_POLICY_MISSING' -> Apply fix -> green 'Recorded on the audit chain as block #N' -> retry the task, it saves -> then type 'fix the broken audit chain' -> refusal."
+    },
+    {
+      "id": "scene-13",
+      "title": "Access, language and mobile",
+      "kind": "app",
+      "route": "/a/overview",
+      "targetSeconds": 35,
+      "sentences": [
+        "The interface is available in English and Hindi, and follows the accessibility standards set out in the Guidelines for Indian Government Websites.",
+        "It installs on a phone as an application, so field staff can update their work from where they are."
+      ],
+      "notes": "Toggle हिंदी on /a/overview, then navigate one page in Hindi. Then a 390x844 mobile viewport of /e/dashboard. See video/README.md — the app has no in-app install button and no beforeinstallprompt handler, so this shows the installable manifest and the phone layout, not a click-to-install."
+    },
+    {
+      "id": "scene-14",
+      "title": "How it is built",
+      "kind": "card",
+      "card": "architecture.html",
+      "targetSeconds": 35,
+      "sentences": [
+        "The system is built on open-source technology, which keeps licensing cost at zero.",
+        "A web application, a documented interface layer with over forty endpoints, a standard database, and a separate service for the analytical models.",
+        "It can be deployed on NIC Cloud or any government-approved environment."
+      ],
+      "notes": "Layers fade in as they are named: browser -> API -> database -> ML service. Your repo documents 66 endpoints; 'over forty' is deliberately conservative and stays true."
+    },
+    {
+      "id": "scene-15",
+      "title": "Close",
+      "kind": "card",
+      "card": "closing.html",
+      "targetSeconds": 25,
+      "sentences": [
+        "SMARTWORK 360 brings goal setting, tracking and measurement into one place, at all three levels, with a record that cannot be quietly changed.",
+        "It is running today, and we would welcome the opportunity to demonstrate it in your office.",
+        "Thank you."
+      ],
+      "notes": "Logo, live URL, GitHub URL, 'Prototype running today'."
+    }
+  ],
+  "short": {
+    "targetSeconds": 90,
+    "note": "Cut from the same footage. Narration is rewritten to fit, never clipped mid-sentence.",
+    "scenes": [
+      {
+        "id": "short-01",
+        "from": "scene-01",
+        "targetSeconds": 11,
+        "sentences": [
+          "SMARTWORK 360.",
+          "A task and performance management system for government offices, built as a module on the e-Office platform.",
+          "It is a working prototype, running live."
+        ]
+      },
+      {
+        "id": "short-02",
+        "from": "scene-03",
+        "targetSeconds": 14,
+        "sentences": [
+          "Officers sign in with their government email, or through Parichay single sign-on, shown here in sandbox mode.",
+          "Every user lands on a dashboard shaped by their role."
+        ]
+      },
+      {
+        "id": "short-03",
+        "from": "scene-06",
+        "targetSeconds": 25,
+        "sentences": [
+          "A manager sees the whole section at once — how much work is finishing within its deadline, and who is carrying too much.",
+          "The system reads the tone of written updates and flags a team under strain before anyone complains.",
+          "Work moves through the board by dragging a card, and every movement is recorded."
+        ]
+      },
+      {
+        "id": "short-04",
+        "from": "scene-10",
+        "targetSeconds": 27,
+        "sentences": [
+          "Every action is recorded as a linked block, each carrying a fingerprint of the block before it.",
+          "Here we alter one old record directly in the database, bypassing the application.",
+          "The chain is checked, the tampering is detected, and the exact block is named.",
+          "Records cannot be quietly edited after the fact."
+        ]
+      },
+      {
+        "id": "short-05",
+        "from": "scene-15",
+        "targetSeconds": 13,
+        "sentences": [
+          "Goal setting, tracking and measurement in one place, at all three levels, with a record that cannot be quietly changed.",
+          "We would welcome the opportunity to demonstrate it in your office."
+        ]
+      }
+    ]
+  },
+  "measured": {
+    "scene-01": {
+      "duration": 19.26,
+      "target": 12,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 3.216
+        },
+        {
+          "start": 3.636,
+          "end": 11.844
+        },
+        {
+          "start": 12.264,
+          "end": 15.12
+        },
+        {
+          "start": 15.54,
+          "end": 19.26
+        }
+      ]
+    },
+    "$engine": "edge-tts",
+    "scene-02": {
+      "duration": 21.96,
+      "target": 18,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 13.056
+        },
+        {
+          "start": 13.476,
+          "end": 17.748
+        },
+        {
+          "start": 18.168,
+          "end": 21.96
+        }
+      ]
+    },
+    "scene-03": {
+      "duration": 20.616,
+      "target": 22,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 6.048
+        },
+        {
+          "start": 6.468,
+          "end": 15.54
+        },
+        {
+          "start": 15.96,
+          "end": 20.616
+        }
+      ]
+    },
+    "scene-04": {
+      "duration": 34.392,
+      "target": 55,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 2.88
+        },
+        {
+          "start": 3.3,
+          "end": 12.708
+        },
+        {
+          "start": 13.128,
+          "end": 21.096
+        },
+        {
+          "start": 21.516,
+          "end": 25.5
+        },
+        {
+          "start": 25.92,
+          "end": 34.392
+        }
+      ]
+    },
+    "scene-05": {
+      "duration": 26.22,
+      "target": 40,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 6.696
+        },
+        {
+          "start": 7.116,
+          "end": 12.108
+        },
+        {
+          "start": 12.528,
+          "end": 20.4
+        },
+        {
+          "start": 20.82,
+          "end": 26.22
+        }
+      ]
+    },
+    "scene-06": {
+      "duration": 41.412,
+      "target": 65,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 5.16
+        },
+        {
+          "start": 5.58,
+          "end": 11.124
+        },
+        {
+          "start": 11.544,
+          "end": 20.856
+        },
+        {
+          "start": 21.276,
+          "end": 27.204
+        },
+        {
+          "start": 27.624,
+          "end": 33.48
+        },
+        {
+          "start": 33.9,
+          "end": 41.412
+        }
+      ]
+    },
+    "scene-07": {
+      "duration": 23.352,
+      "target": 35,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 6.528
+        },
+        {
+          "start": 6.948,
+          "end": 11.244
+        },
+        {
+          "start": 11.664,
+          "end": 15.192
+        },
+        {
+          "start": 15.612,
+          "end": 18.468
+        },
+        {
+          "start": 18.888,
+          "end": 23.352
+        }
+      ]
+    },
+    "scene-08": {
+      "duration": 26.136,
+      "target": 50,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 11.664
+        },
+        {
+          "start": 12.084,
+          "end": 17.1
+        },
+        {
+          "start": 17.52,
+          "end": 26.136
+        }
+      ]
+    },
+    "scene-09": {
+      "duration": 32.136,
+      "target": 45,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 4.368
+        },
+        {
+          "start": 4.788,
+          "end": 18.804
+        },
+        {
+          "start": 19.224,
+          "end": 25.584
+        },
+        {
+          "start": 26.004,
+          "end": 28.836
+        },
+        {
+          "start": 29.256,
+          "end": 32.136
+        }
+      ]
+    },
+    "scene-10": {
+      "duration": 53.568,
+      "target": 75,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 5.688
+        },
+        {
+          "start": 6.108,
+          "end": 14.34
+        },
+        {
+          "start": 14.76,
+          "end": 20.28
+        },
+        {
+          "start": 20.7,
+          "end": 29.1
+        },
+        {
+          "start": 29.52,
+          "end": 32.184
+        },
+        {
+          "start": 32.604,
+          "end": 39.3
+        },
+        {
+          "start": 39.72,
+          "end": 43.008
+        },
+        {
+          "start": 43.428,
+          "end": 47.796
+        },
+        {
+          "start": 48.216,
+          "end": 53.568
+        }
+      ]
+    },
+    "scene-11": {
+      "duration": 19.848,
+      "target": 35,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 5.304
+        },
+        {
+          "start": 5.724,
+          "end": 13.788
+        },
+        {
+          "start": 14.208,
+          "end": 19.848
+        }
+      ]
+    },
+    "scene-12": {
+      "duration": 49.104,
+      "target": 55,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 5.448
+        },
+        {
+          "start": 5.868,
+          "end": 9.828
+        },
+        {
+          "start": 10.248,
+          "end": 20.52
+        },
+        {
+          "start": 20.94,
+          "end": 25.212
+        },
+        {
+          "start": 25.632,
+          "end": 30.048
+        },
+        {
+          "start": 30.468,
+          "end": 34.308
+        },
+        {
+          "start": 34.728,
+          "end": 39.384
+        },
+        {
+          "start": 39.804,
+          "end": 43.788
+        },
+        {
+          "start": 44.208,
+          "end": 49.104
+        }
+      ]
+    },
+    "scene-13": {
+      "duration": 17.508,
+      "target": 35,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 9.888
+        },
+        {
+          "start": 10.308,
+          "end": 17.508
+        }
+      ]
+    },
+    "scene-14": {
+      "duration": 24.72,
+      "target": 35,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 7.032
+        },
+        {
+          "start": 7.452,
+          "end": 18.372
+        },
+        {
+          "start": 18.792,
+          "end": 24.72
+        }
+      ]
+    },
+    "scene-15": {
+      "duration": 19.464,
+      "target": 25,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 10.68
+        },
+        {
+          "start": 11.1,
+          "end": 17.268
+        },
+        {
+          "start": 17.688,
+          "end": 19.464
+        }
+      ]
+    },
+    "short-01": {
+      "duration": 15.504,
+      "target": 11,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 3.216
+        },
+        {
+          "start": 3.636,
+          "end": 11.436
+        },
+        {
+          "start": 11.856,
+          "end": 15.504
+        }
+      ]
+    },
+    "short-02": {
+      "duration": 13.476,
+      "target": 14,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 8.4
+        },
+        {
+          "start": 8.82,
+          "end": 13.476
+        }
+      ]
+    },
+    "short-03": {
+      "duration": 22.608,
+      "target": 25,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 8.736
+        },
+        {
+          "start": 9.156,
+          "end": 16.332
+        },
+        {
+          "start": 16.752,
+          "end": 22.608
+        }
+      ]
+    },
+    "short-04": {
+      "duration": 25.908,
+      "target": 27,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 7.32
+        },
+        {
+          "start": 7.74,
+          "end": 14.724
+        },
+        {
+          "start": 15.144,
+          "end": 21.12
+        },
+        {
+          "start": 21.54,
+          "end": 25.908
+        }
+      ]
+    },
+    "short-05": {
+      "duration": 14.1,
+      "target": 13,
+      "sentences": [
+        {
+          "start": 0,
+          "end": 8.664
+        },
+        {
+          "start": 9.084,
+          "end": 14.1
+        }
+      ]
+    }
+  }
+}

@@ -156,16 +156,24 @@ export function NewTaskModal({
 
         {isAdmin ? (
           <Field label="Department" htmlFor="task-dept" required>
+            {/* Disabled until the list arrives. An empty <select> that silently
+                falls back to the admin's OWN department would let them file
+                work against the wrong one without ever seeing it happen. */}
             <Select
               id="task-dept"
               value={deptChoice || user?.departmentId || ''}
+              disabled={departments.isLoading}
               onChange={(e) => setDeptChoice(e.target.value)}
             >
-              {(departments.data?.items ?? []).map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
+              {departments.isLoading ? (
+                <option value="">Loading departments…</option>
+              ) : (
+                (departments.data?.items ?? []).map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))
+              )}
             </Select>
           </Field>
         ) : null}

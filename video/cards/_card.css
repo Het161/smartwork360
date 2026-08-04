@@ -1,0 +1,94 @@
+/* GovTrust tokens — shared by every card so the cards and the app read as one system. */
+@font-face {
+  font-family: 'Inter Card';
+  src: url('assets/inter.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: block;
+}
+
+:root {
+  --navy: #14417B;
+  --navy-deep: #0E2A52;
+  --saffron: #FF9933;
+  --ink: #0B1F3D;
+  --paper: #F6F8FB;
+  --line: rgba(255, 255, 255, .14);
+  --muted: rgba(255, 255, 255, .66);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter Card', system-ui, sans-serif;
+  font-feature-settings: 'ss01', 'cv05';
+  -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(1200px 700px at 78% 12%, rgba(255, 153, 51, .10), transparent 62%),
+    radial-gradient(900px 620px at 12% 88%, rgba(70, 130, 220, .16), transparent 60%),
+    linear-gradient(158deg, var(--navy-deep) 0%, #10305c 46%, var(--navy) 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* A faint grid keeps the large flat areas from banding in H.264. */
+body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .022) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+}
+
+.stage { position: relative; width: 1520px; }
+
+/* Cue system — the recorder calls __cue(n) at measured narration times, so the
+   visuals land on the word rather than on a guessed CSS delay. */
+.cue {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .62s cubic-bezier(.22, .61, .36, 1), transform .62s cubic-bezier(.22, .61, .36, 1);
+}
+.cue.on { opacity: 1; transform: none; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 153, 51, .42);
+  background: rgba(255, 153, 51, .12);
+  color: #FFD9B0;
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: .01em;
+}
+.dot {
+  width: 9px; height: 9px; border-radius: 999px;
+  background: var(--saffron);
+  box-shadow: 0 0 0 5px rgba(255, 153, 51, .2);
+}
+
+.label {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .48);
+}
+
+.rule {
+  height: 3px; width: 96px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--saffron), rgba(255, 153, 51, 0));
+}

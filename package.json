@@ -23,7 +23,13 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md,css}\"",
     "typecheck": "npm run typecheck -w @smartwork/shared && npm run typecheck -w @smartwork/api && npm run typecheck -w @smartwork/web",
     "eval:ml": "cd services/ml && (test -d .venv || python3 -m venv .venv) && ./.venv/bin/python -m pip install -q -r requirements.txt && ./.venv/bin/python eval/eval_sentiment.py",
-    "deploy:db": "./scripts/setup-remote-db.sh"
+    "deploy:db": "./scripts/setup-remote-db.sh",
+    "video:setup": "python3 -m venv video/.venv && video/.venv/bin/pip install --quiet --upgrade pip && video/.venv/bin/pip install --quiet edge-tts",
+    "video": "npm run video:audio && npm run video:record && npm run video:build && npm run video:qc",
+    "video:audio": "node video/script/generate-audio.mjs",
+    "video:record": "playwright test --config video/scenes/playwright.config.ts",
+    "video:build": "node video/build/assemble.mjs",
+    "video:qc": "node video/qc/check.mjs"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
@@ -32,7 +38,8 @@
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.3",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "@playwright/test": "^1.56.0"
   },
   "engines": {
     "node": ">=20"

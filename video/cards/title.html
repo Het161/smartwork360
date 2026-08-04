@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMARTWORK 360 — title</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .stage { display: flex; align-items: center; gap: 76px; }
+  .mark {
+    width: 208px; height: 208px; flex: none;
+    border-radius: 34px;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid var(--line);
+    display: grid; place-items: center;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, .32);
+  }
+  .mark img { width: 132px; height: 132px; }
+  h1 {
+    font-size: 92px; font-weight: 700; letter-spacing: -.028em; line-height: 1.02;
+  }
+  h1 span { color: var(--saffron); }
+  .sub {
+    margin-top: 22px; font-size: 30px; line-height: 1.45; font-weight: 400;
+    color: var(--muted); max-width: 860px;
+  }
+  .foot { margin-top: 40px; display: flex; align-items: center; gap: 26px; }
+  .meta { font-size: 20px; color: rgba(255,255,255,.42); }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="mark cue" id="c0"><img src="assets/mark-white.svg" alt=""></div>
+    <div>
+      <div class="label cue" id="c1" style="margin-bottom:18px">Government of India · Smart India Hackathon prototype</div>
+      <h1 class="cue" id="c2">SMARTWORK <span>360</span></h1>
+      <p class="sub cue" id="c3">
+        A smart task and performance management system for government offices,
+        built as a module on the e-Office platform.
+      </p>
+      <div class="foot cue" id="c4">
+        <span class="chip"><span class="dot"></span> Working prototype · Live</span>
+        <span class="meta">Recorded from a running system, not a mock-up</span>
+      </div>
+    </div>
+  </div>
+<script>
+  const steps = [['c0','c1'], ['c2'], ['c3'], ['c4']];
+  window.__cue = (n) => (steps[n] || []).forEach(id => document.getElementById(id)?.classList.add('on'));
+  window.__cueCount = steps.length;
+</script>
+</body>
+</html>

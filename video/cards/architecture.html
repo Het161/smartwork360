@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMARTWORK 360 — architecture</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .stage { width: 1600px; }
+  .head { display: flex; align-items: baseline; gap: 26px; margin-bottom: 46px; }
+  h2 { font-size: 50px; font-weight: 600; letter-spacing: -.018em; }
+  .head .note { font-size: 22px; color: rgba(255,255,255,.45); }
+  .rows { display: flex; flex-direction: column; gap: 18px; }
+  .row {
+    display: flex; align-items: center; gap: 28px;
+    padding: 28px 34px; border-radius: 18px;
+    background: rgba(255,255,255,.045);
+    border: 1px solid var(--line);
+  }
+  .row .ic {
+    width: 62px; height: 62px; border-radius: 15px; flex: none;
+    display: grid; place-items: center; font-size: 27px;
+    background: rgba(255,153,51,.14); border: 1px solid rgba(255,153,51,.34);
+    color: #FFD9B0; font-weight: 700;
+  }
+  .row .body { flex: 1; }
+  .row .t { font-size: 32px; font-weight: 600; letter-spacing: -.012em; }
+  .row .d { font-size: 21px; color: var(--muted); margin-top: 6px; }
+  .row .tag {
+    font-size: 18px; padding: 9px 17px; border-radius: 999px;
+    background: rgba(255,255,255,.07); border: 1px solid var(--line);
+    color: rgba(255,255,255,.72); white-space: nowrap;
+  }
+  .foot {
+    margin-top: 44px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+  }
+  .pill {
+    font-size: 21px; padding: 13px 24px; border-radius: 999px;
+    border: 1px solid rgba(255,153,51,.42); background: rgba(255,153,51,.10); color: #FFD9B0;
+  }
+  .pill.plain { border-color: var(--line); background: rgba(255,255,255,.05); color: rgba(255,255,255,.7); }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="head">
+      <h2 class="cue" id="h">How it is built</h2>
+      <span class="note cue" id="n">Open-source throughout — licensing cost zero</span>
+    </div>
+
+    <div class="rows">
+      <div class="row cue" id="r0">
+        <div class="ic">1</div>
+        <div class="body"><div class="t">Web application</div><div class="d">What officers see — dashboards, task board, reports. English and हिंदी.</div></div>
+        <div class="tag">Next.js · TypeScript</div>
+      </div>
+      <div class="row cue" id="r1">
+        <div class="ic">2</div>
+        <div class="body"><div class="t">Interface layer</div><div class="d">The rulebook — who may see what, and which transitions are permitted. Over forty documented endpoints.</div></div>
+        <div class="tag">Node.js · Express</div>
+      </div>
+      <div class="row cue" id="r2">
+        <div class="ic">3</div>
+        <div class="body"><div class="t">Database and audit chain</div><div class="d">A standard relational database. Every change sealed into a linked block in the same transaction.</div></div>
+        <div class="tag">PostgreSQL · SHA-256</div>
+      </div>
+      <div class="row cue" id="r3">
+        <div class="ic">4</div>
+        <div class="body"><div class="t">Analytical service</div><div class="d">Morale, workload and anomaly scoring. Runs offline — if it stops, the interface layer computes the same values.</div></div>
+        <div class="tag">Python · FastAPI</div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="pill cue" id="f0">Deployable on NIC Cloud</span>
+      <span class="pill plain cue" id="f1">or any government-approved environment</span>
+    </div>
+  </div>
+<script>
+  const on = id => document.getElementById(id)?.classList.add('on');
+  const steps = [
+    () => { on('h'); on('n'); },
+    () => { on('r0'); setTimeout(() => on('r1'), 900); setTimeout(() => on('r2'), 1800); setTimeout(() => on('r3'), 2700); },
+    () => { on('f0'); setTimeout(() => on('f1'), 420); },
+  ];
+  window.__cue = (n) => steps[n]?.();
+  window.__cueCount = steps.length;
+</script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMARTWORK 360 — terminal</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: linear-gradient(160deg, #0A1F3E 0%, #0E2A52 100%); }
+  .stage { width: 1480px; }
+  .term {
+    border-radius: 18px;
+    background: #06152C;
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 40px 90px rgba(0,0,0,.5);
+    overflow: hidden;
+  }
+  .bar {
+    height: 54px; display: flex; align-items: center; gap: 11px; padding: 0 22px;
+    background: rgba(255,255,255,.045);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .tl { width: 13px; height: 13px; border-radius: 999px; }
+  .bar .name {
+    margin-left: 16px; font-size: 17px; color: rgba(255,255,255,.5);
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  pre {
+    margin: 0; padding: 34px 38px 44px;
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 25px; line-height: 1.62;
+    white-space: pre-wrap; word-break: break-word;
+    min-height: 560px;
+  }
+  .ps1 { color: #6EA8FF; }
+  .cmd { color: #fff; }
+  .ok   { color: #4ADE80; }
+  .bad  { color: #F87171; }
+  .warn { color: #FBBF24; }
+  .dim  { color: rgba(255,255,255,.52); }
+  .caret {
+    display: inline-block; width: 13px; height: 27px;
+    background: var(--saffron); vertical-align: -5px; margin-left: 3px;
+    animation: blink 1.05s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .cap {
+    margin-top: 26px; font-size: 21px; color: rgba(255,255,255,.44);
+    display: flex; align-items: center; gap: 14px;
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="term">
+      <div class="bar">
+        <span class="tl" style="background:#FF5F57"></span>
+        <span class="tl" style="background:#FEBC2E"></span>
+        <span class="tl" style="background:#28C840"></span>
+        <span class="name" id="title">smartwork360 — bash</span>
+      </div>
+      <pre id="out"><span class="ps1">$ </span><span class="cmd" id="cmd"></span><span class="caret" id="caret"></span></pre>
+    </div>
+    <div class="cap cue" id="cap">
+      <span class="rule" style="width:44px"></span>
+      <span id="capText">Run directly against the database — the application is not involved.</span>
+    </div>
+  </div>
+
+<script>
+  const out = document.getElementById('out');
+  const cmdEl = document.getElementById('cmd');
+  const caret = document.getElementById('caret');
+
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  /**
+   * Types a command, then prints its real output.
+   * The recorder executes the command for real and passes the captured stdout
+   * in, so nothing on this card is invented.
+   *   lines: [{ text, tone }]  tone: ok | bad | warn | dim | undefined
+   */
+  window.__runTerminal = async (cmd, lines, opts = {}) => {
+    cmdEl.textContent = '';
+    caret.style.display = 'inline-block';
+    [...out.querySelectorAll('.line')].forEach(n => n.remove());
+    document.getElementById('capText').textContent = opts.caption
+      || 'Run directly against the database — the application is not involved.';
+
+    for (const ch of cmd) { cmdEl.textContent += ch; await sleep(46); }
+    await sleep(620);
+
+    for (const l of lines) {
+      const span = document.createElement('span');
+      span.className = 'line ' + (l.tone || '');
+      span.textContent = '\n' + l.text;
+      out.insertBefore(span, caret);
+      await sleep(l.pause ?? 110);
+    }
+    const nl = document.createElement('span');
+    nl.className = 'line ps1';
+    nl.textContent = '\n$ ';
+    out.insertBefore(nl, caret);
+    document.getElementById('cap').classList.add('on');
+  };
+
+  window.__cue = () => {};
+  window.__cueCount = 0;
+</script>
+</body>
+</html>

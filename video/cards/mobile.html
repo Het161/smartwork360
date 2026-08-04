@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMARTWORK 360 — on a phone</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .stage { width: 1560px; display: flex; align-items: center; gap: 96px; }
+  .phone {
+    position: relative; flex: none;
+    width: 430px; height: 916px;
+    border-radius: 56px;
+    background: #05122A;
+    border: 2px solid rgba(255,255,255,.16);
+    box-shadow: 0 40px 90px rgba(0,0,0,.55), inset 0 0 0 8px #0A1B33;
+    padding: 20px;
+    opacity: 0; transform: translateY(22px) scale(.98);
+    transition: opacity .7s cubic-bezier(.22,.61,.36,1), transform .7s cubic-bezier(.22,.61,.36,1);
+  }
+  .phone.on { opacity: 1; transform: none; }
+  .notch {
+    position: absolute; top: 26px; left: 50%; transform: translateX(-50%);
+    width: 128px; height: 26px; border-radius: 999px; background: #05122A; z-index: 3;
+  }
+  .screen {
+    width: 390px; height: 844px; border-radius: 40px; overflow: hidden;
+    background: #fff; position: relative;
+  }
+  .screen iframe { width: 390px; height: 844px; border: 0; display: block; }
+  h2 { font-size: 52px; font-weight: 600; letter-spacing: -.02em; line-height: 1.24; }
+  .sub { margin-top: 24px; font-size: 25px; color: var(--muted); line-height: 1.55; max-width: 620px; }
+  ul { margin-top: 40px; list-style: none; display: flex; flex-direction: column; gap: 20px; }
+  li { display: flex; align-items: flex-start; gap: 17px; font-size: 24px; color: rgba(255,255,255,.86); }
+  li .tick {
+    flex: none; width: 30px; height: 30px; border-radius: 999px; margin-top: 2px;
+    background: rgba(255,153,51,.16); border: 1px solid rgba(255,153,51,.42);
+    display: grid; place-items: center; color: var(--saffron); font-size: 16px; font-weight: 700;
+  }
+  .txt { opacity: 0; transform: translateY(14px); transition: opacity .6s, transform .6s; }
+  .txt.on { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="phone" id="phone">
+      <div class="notch"></div>
+      <div class="screen"><iframe id="frame" src="about:blank" title="SMARTWORK 360 on a phone"></iframe></div>
+    </div>
+    <div>
+      <h2 class="txt" id="t0">Installs on a phone<br>as an application</h2>
+      <p class="sub txt" id="t1">
+        The same system, at the same address. Field staff update their work
+        from where they are, without a separate app to distribute.
+      </p>
+      <ul>
+        <li class="txt" id="t2"><span class="tick">✓</span><span>English and हिंदी throughout</span></li>
+        <li class="txt" id="t3"><span class="tick">✓</span><span>Full keyboard operation and screen-reader labels</span></li>
+        <li class="txt" id="t4"><span class="tick">✓</span><span>Animation switches off when the device asks for it</span></li>
+        <li class="txt" id="t5"><span class="tick">✓</span><span>Guidelines for Indian Government Websites</span></li>
+      </ul>
+    </div>
+  </div>
+<script>
+  const base = new URLSearchParams(location.search).get('base') || 'http://localhost:3000';
+  document.getElementById('frame').src = base + '/e/dashboard';
+  const on = id => document.getElementById(id)?.classList.add('on');
+  window.__cue = () => {
+    on('phone');
+    ['t0','t1','t2','t3','t4','t5'].forEach((id, i) => setTimeout(() => on(id), 380 + i * 320));
+  };
+  window.__cueCount = 1;
+</script>
+</body>
+</html>
