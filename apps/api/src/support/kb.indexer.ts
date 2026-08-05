@@ -156,7 +156,7 @@ export async function reindexKb(): Promise<{ chunks: number }> {
   // titles contain "email" or "code" — and at top weight those common words let
   // one document capture queries that belong to another.
   await prisma.$executeRawUnsafe(`
-    UPDATE smartwork.kb_chunks SET tsv =
+    UPDATE kb_chunks SET tsv =
       setweight(to_tsvector('english', coalesce("errorCode",'')), 'A') ||
       setweight(to_tsvector('english', array_to_string(tags, ' ')), 'A') ||
       setweight(to_tsvector('english', coalesce(title,'')), 'B') ||
@@ -164,7 +164,7 @@ export async function reindexKb(): Promise<{ chunks: number }> {
       setweight(to_tsvector('english', coalesce(body,'')), 'C')
   `);
   await prisma.$executeRawUnsafe(
-    `CREATE INDEX IF NOT EXISTS kb_chunks_tsv_idx ON smartwork.kb_chunks USING GIN (tsv)`,
+    `CREATE INDEX IF NOT EXISTS kb_chunks_tsv_idx ON kb_chunks USING GIN (tsv)`,
   );
 
   invalidateDocFrequencies();

@@ -8,6 +8,16 @@
  */
 import { prisma } from '../db/prisma';
 
+/*
+ * Raw SQL here uses UNQUALIFIED table names on purpose.
+ *
+ * Postgres resolves them through search_path, which Prisma sets from the
+ * connection string's `?schema=`. Qualifying them with a hard-coded schema
+ * worked locally (`?schema=smartwork`) and broke every raw query in production,
+ * where the same database uses `public` — the support assistant returned 500s
+ * while every Prisma-generated query on the same tables kept working.
+ */
+
 export interface RetrievedChunk {
   slug: string;
   kind: string;
@@ -43,13 +53,13 @@ async function docFrequencies(): Promise<{ df: Map<string, number>; docs: number
   if (dfCache) return dfCache;
   const rows = await prisma.$queryRawUnsafe<{ word: string; df: bigint }[]>(
     `SELECT w.word, count(DISTINCT k."errorCode") AS df
-       FROM smartwork.kb_chunks k,
+       FROM kb_chunks k,
             LATERAL unnest(tsvector_to_array(k.tsv)) AS w(word)
       WHERE k.kind = 'ERROR' AND k."errorCode" IS NOT NULL
       GROUP BY w.word`,
   );
   const total = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
-    `SELECT count(DISTINCT "errorCode") AS n FROM smartwork.kb_chunks WHERE kind = 'ERROR'`,
+    `SELECT count(DISTINCT "errorCode") AS n FROM kb_chunks WHERE kind = 'ERROR'`,
   );
   dfCache = {
     df: new Map(rows.map((r) => [r.word, Number(r.df)])),
@@ -118,7 +128,7 @@ export async function retrieve(
   if (opts.errorCode) {
     const pinned = await prisma.$queryRawUnsafe<RetrievedChunk[]>(
       `SELECT slug, kind::text, title, section, body, "errorCode", "fixAction", 1.0::float8 AS rank
-         FROM smartwork.kb_chunks
+         FROM kb_chunks
         WHERE "errorCode" = $1
         ORDER BY section`,
       opts.errorCode,
@@ -130,7 +140,7 @@ export async function retrieve(
     const rows = await prisma.$queryRawUnsafe<RetrievedChunk[]>(
       `SELECT slug, kind::text, title, section, body, "errorCode", "fixAction",
               ts_rank_cd(tsv, to_tsquery('english', $1))::float8 AS rank
-         FROM smartwork.kb_chunks
+         FROM kb_chunks
         WHERE tsv @@ to_tsquery('english', $1)
         ORDER BY rank DESC
         LIMIT $2`,
@@ -171,7 +181,7 @@ async function matchDocument(
     `SELECT split_part(slug, '#', 1) AS doc,
             sum(ts_rank_cd(tsv, to_tsquery('english', $1)))::float8 AS score,
             max(ts_rank_cd(tsv, to_tsquery('english', $1)))::float8 AS peak
-       FROM smartwork.kb_chunks
+       FROM kb_chunks
       WHERE ${kindFilter} AND tsv @@ to_tsquery('english', $1)
       GROUP BY split_part(slug, '#', 1)
       ORDER BY score DESC, peak DESC
@@ -183,7 +193,7 @@ async function matchDocument(
 
   const cov = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
     `SELECT count(DISTINCT w.word) AS n
-       FROM smartwork.kb_chunks k,
+       FROM kb_chunks k,
             LATERAL unnest(tsvector_to_array(k.tsv)) AS w(word)
       WHERE split_part(k.slug, '#', 1) = $1 AND w.word = ANY($2::text[])`,
     doc,
@@ -194,7 +204,7 @@ async function matchDocument(
   const rows = await prisma.$queryRawUnsafe<RetrievedChunk[]>(
     `SELECT slug, kind::text, title, section, body, "errorCode", "fixAction",
             ts_rank_cd(tsv, to_tsquery('english', $2))::float8 AS rank
-       FROM smartwork.kb_chunks
+       FROM kb_chunks
       WHERE split_part(slug, '#', 1) = $1
       ORDER BY rank DESC`,
     doc,
@@ -218,7 +228,7 @@ export async function matchError(text: string): Promise<RetrievedChunk[]> {
   if (code) {
     const rows = await prisma.$queryRawUnsafe<RetrievedChunk[]>(
       `SELECT slug, kind::text, title, section, body, "errorCode", "fixAction", 1.0::float8 AS rank
-         FROM smartwork.kb_chunks WHERE "errorCode" = $1 ORDER BY section`,
+         FROM kb_chunks WHERE "errorCode" = $1 ORDER BY section`,
       code,
     );
     if (rows.length) return rows;
@@ -245,7 +255,7 @@ export async function matchError(text: string): Promise<RetrievedChunk[]> {
     `SELECT "errorCode",
             sum(ts_rank_cd(tsv, to_tsquery('english', $1)))::float8 AS score,
             max(ts_rank_cd(tsv, to_tsquery('english', $1)))::float8 AS peak
-       FROM smartwork.kb_chunks
+       FROM kb_chunks
       WHERE kind = 'ERROR' AND "errorCode" IS NOT NULL
         AND tsv @@ to_tsquery('english', $1)
       GROUP BY "errorCode"
@@ -266,7 +276,7 @@ export async function matchError(text: string): Promise<RetrievedChunk[]> {
   // document, a real report shares several.
   const cov = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
     `SELECT count(DISTINCT w.word) AS n
-       FROM smartwork.kb_chunks k,
+       FROM kb_chunks k,
             LATERAL unnest(tsvector_to_array(k.tsv)) AS w(word)
       WHERE k."errorCode" = $1 AND w.word = ANY($2::text[])`,
     winner,
@@ -277,7 +287,7 @@ export async function matchError(text: string): Promise<RetrievedChunk[]> {
   const rows = await prisma.$queryRawUnsafe<RetrievedChunk[]>(
     `SELECT slug, kind::text, title, section, body, "errorCode", "fixAction",
             ts_rank_cd(tsv, to_tsquery('english', $2))::float8 AS rank
-       FROM smartwork.kb_chunks
+       FROM kb_chunks
       WHERE "errorCode" = $1
       ORDER BY rank DESC`,
     winner,
